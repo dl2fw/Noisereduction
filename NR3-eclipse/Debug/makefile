@@ -67,7 +67,7 @@ all: Noisereduction3.elf secondary-outputs
 Noisereduction3.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross ARM C++ Linker'
-	arm-none-eabi-g++ -mcpu=cortex-m4 -mthumb -mthumb-interwork -mlittle-endian -mfloat-abi=hard -mfpu=fpv4-sp-d16 -O0 -fsingle-precision-constant -Wall -Wno-unused-function  -g -ggdb -T stm32_flash.ld -nostartfiles -Xlinker --gc-sections -L"../ldscripts" -Wl,-Map,"Noisereduction3.map" --specs=nano.specs -o "Noisereduction3.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	arm-none-eabi-g++ -mcpu=cortex-m4 -mthumb -mlittle-endian -mfloat-abi=hard -mfpu=fpv4-sp-d16 -O0 -ffunction-sections -fdata-sections -fsingle-precision-constant -Wall -Wdouble-promotion  -g -ggdb -T stm32_flash.ld -Xlinker --gc-sections -L"../ldscripts" -Wl,-Map,"Noisereduction3.map" -o "Noisereduction3.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

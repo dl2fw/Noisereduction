@@ -1,0 +1,10 @@
+.metadata
+*.o
+*.d
+*~
+*.pyc
+*.bin
+*.dfu
+*.elf
+Debug/
+Release/

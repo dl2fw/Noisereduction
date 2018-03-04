@@ -1,4 +1,4 @@
-src/main.o: ../src/main.c ../include/stm32f4_adc.h \
+src/main.o: ../src/main.c ../include/audio_nr.h ../include/stm32f4_adc.h \
  ../include/stm32f4_dac.h ../include/sm1000_leds_switches.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_gpio.h \
  ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h \
@@ -33,11 +33,9 @@ src/main.o: ../src/main.c ../include/stm32f4_adc.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_dac.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_dcmi.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_fsmc.h \
- ../Drivers/CMSIS/Include/arm_math.h ../Drivers/CMSIS/Include/core_cm4.h \
- ../Drivers/CMSIS/Include/arm_const_structs.h \
- ../Drivers/CMSIS/Include/arm_math.h \
- ../Drivers/CMSIS/Include/arm_common_tables.h \
- ../Drivers/CMSIS/Include/arm_common_tables.h
+ ../Drivers/CMSIS/Include/arm_math.h ../Drivers/CMSIS/Include/core_cm4.h
+
+../include/audio_nr.h:
 
 ../include/stm32f4_adc.h:
 
@@ -114,11 +112,3 @@ src/main.o: ../src/main.c ../include/stm32f4_adc.h \
 ../Drivers/CMSIS/Include/arm_math.h:
 
 ../Drivers/CMSIS/Include/core_cm4.h:
-
-../Drivers/CMSIS/Include/arm_const_structs.h:
-
-../Drivers/CMSIS/Include/arm_math.h:
-
-../Drivers/CMSIS/Include/arm_common_tables.h:
-
-../Drivers/CMSIS/Include/arm_common_tables.h:

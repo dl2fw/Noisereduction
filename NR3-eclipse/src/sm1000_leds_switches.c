@@ -40,6 +40,7 @@
 #include <stm32f4xx.h>
 #include <stm32f4xx_gpio.h>
 #include "sm1000_leds_switches.h"
+#include <stm32f4xx_rcc.h>
 
 void sm1000_leds_switches_init(void) {
     GPIO_InitTypeDef GPIO_InitStruct;
