@@ -1,11 +1,11 @@
 
-#include <audio_nr.h>
+#include "audio_nr.h"
 #include "arm_math.h"
 #include "arm_const_structs.h"
 #include "arm_common_tables.h"
 
 
-void spectral_noise_reduction_3 (short* in_buffer)
+void spectral_noise_reduction_3 (short* in_buffer, int32_t nr_alpha_int)
 {
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -36,7 +36,7 @@ const float32_t pnsaf=0.01;	// noise probability safety value [0.01]
 const float32_t psini=0.5;	// initial speech probability [0.5]
 const float32_t pspri=0.5;	// prior speech probability [0.5]
 
-const float32_t nr_alpha = 0.995f;
+const float32_t nr_alpha = (float32_t)(nr_alpha_int)/1000.0 + 0.899f;
 
 
 	static float32_t 	last_iFFT_result [NR_FFT_L_2 / 2];

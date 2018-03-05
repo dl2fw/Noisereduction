@@ -4,7 +4,6 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../src/audio_nr.c \
 ../src/debugblinky.c \
 ../src/fifo.c \
 ../src/main.c \
@@ -17,7 +16,6 @@ S_UPPER_SRCS += \
 ../src/startup_stm32f4xx.S 
 
 OBJS += \
-./src/audio_nr.o \
 ./src/debugblinky.o \
 ./src/fifo.o \
 ./src/main.o \
@@ -28,7 +26,6 @@ OBJS += \
 ./src/system_stm32f4xx.o 
 
 C_DEPS += \
-./src/audio_nr.d \
 ./src/debugblinky.d \
 ./src/fifo.d \
 ./src/main.d \
@@ -45,14 +42,14 @@ S_UPPER_DEPS += \
 src/%.o: ../src/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM C Compiler'
-	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mlittle-endian -mfloat-abi=hard -mfpu=fpv4-sp-d16 -O0 -ffunction-sections -fdata-sections -fsingle-precision-constant -Wall -Wdouble-promotion  -g -ggdb -DSTM32F40_41xxx -DUSE_STDPERIPH_DRIVER -DCORTEX_M4 -DARM_MATH_CM4 -D__FPU_PRESENT=1 -D__FPU_USED=1 -D__EMBEDDED__ -I"../include" -I../Drivers/STM32F4xx_StdPeriph_Driver/inc -I../Drivers/CMSIS/Include -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Audio_DSP -std=gnu99 -O3 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mlittle-endian -mfloat-abi=hard -mfpu=fpv4-sp-d16 -O0 -ffunction-sections -fdata-sections -fsingle-precision-constant -Wall -Wdouble-promotion  -g -ggdb -DSTM32F40_41xxx -DUSE_STDPERIPH_DRIVER -DCORTEX_M4 -DARM_MATH_CM4 -D__FPU_PRESENT=1 -D__FPU_USED=1 -D__EMBEDDED__ -I"../include" -I../Drivers/STM32F4xx_StdPeriph_Driver/inc -I../Drivers/CMSIS/Include -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Audio_DSP/inc -I../LCD/inc -I../ENCODER/inc -std=gnu99 -O3 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
 src/%.o: ../src/%.S
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross ARM GNU Assembler'
-	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mlittle-endian -mfloat-abi=hard -mfpu=fpv4-sp-d16 -O0 -ffunction-sections -fdata-sections -fsingle-precision-constant -Wall -Wdouble-promotion  -g -ggdb -x assembler-with-cpp -DSTM32F40_41xxx -DUSE_STDPERIPH_DRIVER -DCORTEX_M4 -DARM_MATH_CM4 -D__FPU_PRESENT=1 -D__FPU_USED=1 -D__EMBEDDED__ -I"../include" -I../Drivers/STM32F4xx_StdPeriph_Driver/inc -I../Drivers/CMSIS/Include -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Audio_DSP -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mlittle-endian -mfloat-abi=hard -mfpu=fpv4-sp-d16 -O0 -ffunction-sections -fdata-sections -fsingle-precision-constant -Wall -Wdouble-promotion  -g -ggdb -x assembler-with-cpp -DSTM32F40_41xxx -DUSE_STDPERIPH_DRIVER -DCORTEX_M4 -DARM_MATH_CM4 -D__FPU_PRESENT=1 -D__FPU_USED=1 -D__EMBEDDED__ -I"../include" -I../Drivers/STM32F4xx_StdPeriph_Driver/inc -I../Drivers/CMSIS/Include -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Audio_DSP/inc -I../LCD/inc -I../ENCODER/inc -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

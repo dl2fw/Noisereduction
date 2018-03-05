@@ -1,5 +1,5 @@
 
-#include <audio_nr.h>
+#include "audio_nr.h"
 #include "stm32f4_adc.h"
 #include "stm32f4_dac.h"
 
@@ -11,10 +11,11 @@
 #include <stdlib.h>
 
 #include "arm_math.h"
+#include "tm_stm32f4_hd44780.h"
+#include "tm_stm32f4_rotary_encoder.h"
+#include "tm_stm32f4_exti.h"
 
-
-
-
+ TM_RE_t RE1_Data;
 
 
 //void spectral_noise_reduction_3 (short*);
@@ -22,7 +23,7 @@
 int main(void) {
 
     int            n_samples_16k;
-
+    int32_t	   nr_al = 0;
 
     /* Outgoing sample counter */
 
@@ -56,6 +57,15 @@ int main(void) {
    int nr_active=0;
    int button_count = 0;
 
+   char buf[15];
+
+   TM_HD44780_Clear();
+   TM_HD44780_Init(20, 4);
+   TM_HD44780_Puts(0, 0, "   Noisereduction ");
+
+   TM_RE_Init(&RE1_Data, GPIOC, GPIO_PIN_14, GPIOC, GPIO_PIN_15);
+   TM_RE_SetMode(&RE1_Data, TM_RE_Mode_One);
+
     while(1) {
 
                 /* ADC2 is the NF input (PA2), DAC1 is the NF Output (PA4) */
@@ -74,7 +84,7 @@ int main(void) {
                             led_err(1);
                     }
 
-					if (nr_active == 1) spectral_noise_reduction_3(adc16k); //takes a short, internal casting to float and back to short
+					if (nr_active == 1) spectral_noise_reduction_3(adc16k, nr_al); //takes a short, internal casting to float and back to short
 
 
 
@@ -95,6 +105,23 @@ int main(void) {
 					led_ptt(0);
                    // led_ptt(1); led_rt(0); led_err(0); not_cptt(0);
                     GPIOE->ODR &= ~(1 << 3);
+
+                    TM_RE_Get(&RE1_Data);
+                    if (RE1_Data.RE_Count > 100)  {
+                	RE1_Data.RE_Count = 100;
+                	RE1_Data.Absolute = 100;
+                    }
+
+                    if (RE1_Data.RE_Count < 0)  {
+                      	RE1_Data.RE_Count = 0;
+                      	RE1_Data.Absolute = 0;
+                    }
+		    nr_al=(int32_t)RE1_Data.Absolute;
+
+                    sprintf(buf, "Reduction Level:%3d", RE1_Data.Absolute);
+
+                    TM_HD44780_Puts(0, 2,buf);
+
                 }
 
 
@@ -103,3 +130,11 @@ int main(void) {
     } /* while(1) ... */
 }
 
+void TM_EXTI_Handler(uint16_t GPIO_Pin) {
+    /* Check RE pin 1 */
+    if (GPIO_Pin == RE1_Data.GPIO_PIN_A) {
+        /* Process data */
+        TM_RE_Process(&RE1_Data);
+    }
+
+}

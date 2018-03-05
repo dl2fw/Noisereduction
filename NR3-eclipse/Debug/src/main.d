@@ -1,11 +1,12 @@
-src/main.o: ../src/main.c ../include/audio_nr.h ../include/stm32f4_adc.h \
+src/main.o: ../src/main.c ../Audio_DSP/inc/audio_nr.h \
+ ../Drivers/CMSIS/Include/arm_math.h ../Drivers/CMSIS/Include/core_cm4.h \
+ ../Drivers/CMSIS/Include/core_cmInstr.h \
+ ../Drivers/CMSIS/Include/core_cmFunc.h \
+ ../Drivers/CMSIS/Include/core_cm4_simd.h ../include/stm32f4_adc.h \
  ../include/stm32f4_dac.h ../include/sm1000_leds_switches.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_gpio.h \
  ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h \
  ../Drivers/CMSIS/Include/core_cm4.h \
- ../Drivers/CMSIS/Include/core_cmInstr.h \
- ../Drivers/CMSIS/Include/core_cmFunc.h \
- ../Drivers/CMSIS/Include/core_cm4_simd.h \
  ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/system_stm32f4xx.h \
  ../include/stm32f4xx_conf.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_adc.h \
@@ -33,9 +34,24 @@ src/main.o: ../src/main.c ../include/audio_nr.h ../include/stm32f4_adc.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_dac.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_dcmi.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_fsmc.h \
- ../Drivers/CMSIS/Include/arm_math.h ../Drivers/CMSIS/Include/core_cm4.h
+ ../LCD/inc/tm_stm32f4_hd44780.h ../LCD/inc/defines.h \
+ ../LCD/inc/tm_stm32f4_delay.h ../LCD/inc/attributes.h \
+ ../LCD/inc/tm_stm32f4_gpio.h ../ENCODER/inc/tm_stm32f4_rotary_encoder.h \
+ ../LCD/inc/defines.h ../LCD/inc/tm_stm32f4_gpio.h \
+ ../ENCODER/inc/tm_stm32f4_exti.h ../LCD/inc/attributes.h \
+ ../ENCODER/inc/tm_stm32f4_exti.h
 
-../include/audio_nr.h:
+../Audio_DSP/inc/audio_nr.h:
+
+../Drivers/CMSIS/Include/arm_math.h:
+
+../Drivers/CMSIS/Include/core_cm4.h:
+
+../Drivers/CMSIS/Include/core_cmInstr.h:
+
+../Drivers/CMSIS/Include/core_cmFunc.h:
+
+../Drivers/CMSIS/Include/core_cm4_simd.h:
 
 ../include/stm32f4_adc.h:
 
@@ -48,12 +64,6 @@ src/main.o: ../src/main.c ../include/audio_nr.h ../include/stm32f4_adc.h \
 ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h:
 
 ../Drivers/CMSIS/Include/core_cm4.h:
-
-../Drivers/CMSIS/Include/core_cmInstr.h:
-
-../Drivers/CMSIS/Include/core_cmFunc.h:
-
-../Drivers/CMSIS/Include/core_cm4_simd.h:
 
 ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/system_stm32f4xx.h:
 
@@ -109,6 +119,24 @@ src/main.o: ../src/main.c ../include/audio_nr.h ../include/stm32f4_adc.h \
 
 ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_fsmc.h:
 
-../Drivers/CMSIS/Include/arm_math.h:
+../LCD/inc/tm_stm32f4_hd44780.h:
 
-../Drivers/CMSIS/Include/core_cm4.h:
+../LCD/inc/defines.h:
+
+../LCD/inc/tm_stm32f4_delay.h:
+
+../LCD/inc/attributes.h:
+
+../LCD/inc/tm_stm32f4_gpio.h:
+
+../ENCODER/inc/tm_stm32f4_rotary_encoder.h:
+
+../LCD/inc/defines.h:
+
+../LCD/inc/tm_stm32f4_gpio.h:
+
+../ENCODER/inc/tm_stm32f4_exti.h:
+
+../LCD/inc/attributes.h:
+
+../ENCODER/inc/tm_stm32f4_exti.h:

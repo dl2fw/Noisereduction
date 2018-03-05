@@ -27,6 +27,7 @@ S_UPPER_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+Audio_DSP/src \
 Drivers/CMSIS/DSP_Lib/Source/BasicMathFunctions \
 Drivers/CMSIS/DSP_Lib/Source/CommonTables \
 Drivers/CMSIS/DSP_Lib/Source/ComplexMathFunctions \
@@ -38,5 +39,7 @@ Drivers/CMSIS/DSP_Lib/Source/StatisticsFunctions \
 Drivers/CMSIS/DSP_Lib/Source/SupportFunctions \
 Drivers/CMSIS/DSP_Lib/Source/TransformFunctions \
 Drivers/STM32F4xx_StdPeriph_Driver/src \
+ENCODER/src \
+LCD/src \
 src \
 

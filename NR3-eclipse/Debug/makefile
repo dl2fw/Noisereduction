@@ -9,6 +9,8 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include src/subdir.mk
+-include LCD/src/subdir.mk
+-include ENCODER/src/subdir.mk
 -include Drivers/STM32F4xx_StdPeriph_Driver/src/subdir.mk
 -include Drivers/CMSIS/DSP_Lib/Source/TransformFunctions/subdir.mk
 -include Drivers/CMSIS/DSP_Lib/Source/SupportFunctions/subdir.mk
@@ -20,6 +22,7 @@ RM := rm -rf
 -include Drivers/CMSIS/DSP_Lib/Source/ComplexMathFunctions/subdir.mk
 -include Drivers/CMSIS/DSP_Lib/Source/CommonTables/subdir.mk
 -include Drivers/CMSIS/DSP_Lib/Source/BasicMathFunctions/subdir.mk
+-include Audio_DSP/src/subdir.mk
 -include subdir.mk
 -include objects.mk
 
