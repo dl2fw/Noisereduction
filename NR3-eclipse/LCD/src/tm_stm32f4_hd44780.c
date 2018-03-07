@@ -249,8 +249,8 @@ static void TM_HD44780_Cmd4bit(uint8_t cmd) {
 	TM_GPIO_SetPinValue(HD44780_D4_PORT, HD44780_D4_PIN, (cmd & 0x01));
 	HD44780_E_BLINK;
 }
-
-static void TM_HD44780_CursorSet(uint8_t col, uint8_t row) {
+//static
+ static void TM_HD44780_CursorSet(uint8_t col, uint8_t row) {
 	uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54};
 	
 	/* Go to beginning */

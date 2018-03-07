@@ -35,7 +35,7 @@
 #define SWITCH_BACK    GPIO_Pin_1
 #define EXT_PTT        GPIO_Pin_8
 
-#define NR_ON        GPIO_Pin_0  //PA0
+//#define NR_ON        GPIO_Pin_0  //PA0
 
 #include <stm32f4xx.h>
 #include <stm32f4xx_gpio.h>
@@ -71,11 +71,11 @@ void sm1000_leds_switches_init(void) {
     GPIO_Init(GPIOD, &GPIO_InitStruct);
     
     
-	GPIO_InitStruct.GPIO_Pin = NR_ON;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL; /* we have our own external pull ups */
-    GPIO_Init(GPIOA, &GPIO_InitStruct);
+//	GPIO_InitStruct.GPIO_Pin = NR_ON;
+//    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+//    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_2MHz;
+//    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL; /* we have our own external pull ups */
+//    GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 
@@ -138,10 +138,10 @@ int ext_ptt(void) {
     return GPIOD->IDR & (1 << 8);
 }
 
-int nr_on(void) {
-    return GPIOA->IDR & (1 << 0);    
+//int nr_on(void) {
+//    return GPIOA->IDR & (1 << 0);
     
-}
+//}
 
 /*
   FUNCTION: ColorfulRingOfDeath()

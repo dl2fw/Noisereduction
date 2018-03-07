@@ -262,6 +262,9 @@ void TM_HD44780_CreateChar(uint8_t location, uint8_t* data);
  */
 void TM_HD44780_PutCustom(uint8_t x, uint8_t y, uint8_t location);
 
+
+
+
 /**
  * @}
  */

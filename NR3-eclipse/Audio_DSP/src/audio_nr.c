@@ -5,7 +5,7 @@
 #include "arm_common_tables.h"
 
 
-void spectral_noise_reduction_3 (short* in_buffer, int32_t nr_alpha_int)
+void spectral_noise_reduction_3 (short* in_buffer)
 {
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -36,35 +36,35 @@ const float32_t pnsaf=0.01;	// noise probability safety value [0.01]
 const float32_t psini=0.5;	// initial speech probability [0.5]
 const float32_t pspri=0.5;	// prior speech probability [0.5]
 
-const float32_t nr_alpha = (float32_t)(nr_alpha_int)/1000.0 + 0.899f;
+       float32_t nr_alpha = 0.995;
 
 
-	static float32_t 	last_iFFT_result [NR_FFT_L_2 / 2];
-	static float32_t 	last_sample_buffer_L [NR_FFT_L_2 / 2];
-	static float32_t 	Hk[NR_FFT_L_2 / 2]; // gain factors
-	       float32_t 	FFT_buffer[NR_FFT_L_2 * 2];
-	static float32_t 	Nest[NR_FFT_L_2 / 2]; // noise estimates for the current and the last FFT frame
-	static float32_t 	SNR_prio[NR_FFT_L_2 / 2];
-	static float32_t 	SNR_post[NR_FFT_L_2 / 2];
-	static float32_t 	Hk_old[NR_FFT_L_2 / 2];
-	static float32_t 	X[NR_FFT_L_2 / 2][2]; // magnitudes of the current and the last FFT bins
+static float32_t 	last_iFFT_result [NR_FFT_L_2 / 2];
+static float32_t 	last_sample_buffer_L [NR_FFT_L_2 / 2];
+static float32_t 	Hk[NR_FFT_L_2 / 2]; // gain factors
+       float32_t 	FFT_buffer[NR_FFT_L_2 * 2];
+static float32_t 	Nest[NR_FFT_L_2 / 2]; // noise estimates for the current and the last FFT frame
+static float32_t 	SNR_prio[NR_FFT_L_2 / 2];
+static float32_t 	SNR_post[NR_FFT_L_2 / 2];
+static float32_t 	Hk_old[NR_FFT_L_2 / 2];
+static float32_t 	X[NR_FFT_L_2 / 2][2]; // magnitudes of the current and the last FFT bins
 
-	       float32_t	ax;
-	       float32_t	ap;
-	       float32_t	xih1;
-	       float32_t	xih1r;
-	       float32_t	pfac;
+       float32_t	ax;
+       float32_t	ap;
+       float32_t	xih1;
+       float32_t	xih1r;
+       float32_t	pfac;
 
-	       float32_t	snr_prio_min;
+       float32_t	snr_prio_min;
 
-	       int16_t		NN;// for musical noise reduction
-	       int16_t		width = 15;// for musical noise reduction
-	       float32_t 	pre_power;// for musical noise reduction
-	       float32_t	post_power;// for musical noise reduction
-	       float32_t	power_ratio; // for musical noise reduction
-	       float32_t	power_threshold = 0.75;
-	       //int16_t						power_threshold_int;
-	       int16_t 		asnr=30;
+       int16_t		NN;// for musical noise reduction
+       int16_t		width = 15;// for musical noise reduction
+       float32_t 	pre_power;// for musical noise reduction
+       float32_t	post_power;// for musical noise reduction
+       float32_t	power_ratio; // for musical noise reduction
+       float32_t	power_threshold = (float32_t)NR3.power_threshold_int / 100.0;
+       //int16_t						power_threshold_int;
+       int16_t 		asnr = 30;
 
 	static int16_t  	nr_first_time =1;
 
@@ -89,7 +89,7 @@ ap = 0.81020;
 //NR2.xih1 = 31.62; 		//powf(10, (float32_t)NR2.asnr / 10.0);
 
 
-
+asnr =	NR3.asnr_int;
 
 xih1 = powf(10, (float32_t)asnr / 10.0);
 xih1r = 1.0 / (1.0 + xih1) - 1.0;
@@ -107,6 +107,13 @@ float32_t ph1y[NR_FFT_SIZE];
 
     if(nr_first_time == 1)
     { // TODO: properly initialize all the variables
+
+	//NR3.power_threshold_int = 75;
+	//NR3.alpha_int = 95;
+	//NR3.asnr_int = 30;
+	//NR3.width_int = 15;
+
+
 
 		for(int bindx = 0; bindx < NR_FFT_L_2 / 2; bindx++)
 			{
@@ -186,6 +193,14 @@ float32_t ph1y[NR_FFT_SIZE];
       }
      if (nr_first_time == 3)
      {
+
+	 nr_alpha = (float32_t)(NR3.alpha_int)/1000.0 + 0.899f;
+	 power_threshold = (float32_t)(NR3.power_threshold_int) / 100.0;
+	 asnr =	NR3.asnr_int;
+	 width = NR3.width_int;
+
+
+
 
  //new noise estimate MMSE based!!!
 

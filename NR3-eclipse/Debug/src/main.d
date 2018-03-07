@@ -1,12 +1,9 @@
-src/main.o: ../src/main.c ../Audio_DSP/inc/audio_nr.h \
- ../Drivers/CMSIS/Include/arm_math.h ../Drivers/CMSIS/Include/core_cm4.h \
- ../Drivers/CMSIS/Include/core_cmInstr.h \
- ../Drivers/CMSIS/Include/core_cmFunc.h \
- ../Drivers/CMSIS/Include/core_cm4_simd.h ../include/stm32f4_adc.h \
- ../include/stm32f4_dac.h ../include/sm1000_leds_switches.h \
- ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_gpio.h \
+src/main.o: ../src/main.c \
  ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h \
  ../Drivers/CMSIS/Include/core_cm4.h \
+ ../Drivers/CMSIS/Include/core_cmInstr.h \
+ ../Drivers/CMSIS/Include/core_cmFunc.h \
+ ../Drivers/CMSIS/Include/core_cm4_simd.h \
  ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/system_stm32f4xx.h \
  ../include/stm32f4xx_conf.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_adc.h \
@@ -15,6 +12,7 @@ src/main.o: ../src/main.c ../Audio_DSP/inc/audio_nr.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_dma.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_exti.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_flash.h \
+ ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_gpio.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_i2c.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_iwdg.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_pwr.h \
@@ -34,16 +32,20 @@ src/main.o: ../src/main.c ../Audio_DSP/inc/audio_nr.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_dac.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_dcmi.h \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_fsmc.h \
+ ../Audio_DSP/inc/audio_nr.h ../Drivers/CMSIS/Include/arm_math.h \
+ ../Drivers/CMSIS/Include/core_cm4.h ../include/stm32f4_adc.h \
+ ../include/stm32f4_dac.h ../include/sm1000_leds_switches.h \
  ../LCD/inc/tm_stm32f4_hd44780.h ../LCD/inc/defines.h \
  ../LCD/inc/tm_stm32f4_delay.h ../LCD/inc/attributes.h \
  ../LCD/inc/tm_stm32f4_gpio.h ../ENCODER/inc/tm_stm32f4_rotary_encoder.h \
  ../LCD/inc/defines.h ../LCD/inc/tm_stm32f4_gpio.h \
  ../ENCODER/inc/tm_stm32f4_exti.h ../LCD/inc/attributes.h \
- ../ENCODER/inc/tm_stm32f4_exti.h
+ ../ENCODER/inc/tm_stm32f4_exti.h ../Audio_DSP/inc/codec.h \
+ ../Audio_DSP/inc/stm32f4_discovery_audio_codec.h ../LCD/inc/ui.h \
+ ../LCD/inc/tm_stm32f4_hd44780.h ../ENCODER/inc/tm_stm32f4_button.h \
+ ../LCD/inc/tm_stm32f4_delay.h
 
-../Audio_DSP/inc/audio_nr.h:
-
-../Drivers/CMSIS/Include/arm_math.h:
+../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h:
 
 ../Drivers/CMSIS/Include/core_cm4.h:
 
@@ -52,18 +54,6 @@ src/main.o: ../src/main.c ../Audio_DSP/inc/audio_nr.h \
 ../Drivers/CMSIS/Include/core_cmFunc.h:
 
 ../Drivers/CMSIS/Include/core_cm4_simd.h:
-
-../include/stm32f4_adc.h:
-
-../include/stm32f4_dac.h:
-
-../include/sm1000_leds_switches.h:
-
-../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_gpio.h:
-
-../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h:
-
-../Drivers/CMSIS/Include/core_cm4.h:
 
 ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/system_stm32f4xx.h:
 
@@ -80,6 +70,8 @@ src/main.o: ../src/main.c ../Audio_DSP/inc/audio_nr.h \
 ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_exti.h:
 
 ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_flash.h:
+
+../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_gpio.h:
 
 ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_i2c.h:
 
@@ -119,6 +111,18 @@ src/main.o: ../src/main.c ../Audio_DSP/inc/audio_nr.h \
 
 ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_fsmc.h:
 
+../Audio_DSP/inc/audio_nr.h:
+
+../Drivers/CMSIS/Include/arm_math.h:
+
+../Drivers/CMSIS/Include/core_cm4.h:
+
+../include/stm32f4_adc.h:
+
+../include/stm32f4_dac.h:
+
+../include/sm1000_leds_switches.h:
+
 ../LCD/inc/tm_stm32f4_hd44780.h:
 
 ../LCD/inc/defines.h:
@@ -140,3 +144,15 @@ src/main.o: ../src/main.c ../Audio_DSP/inc/audio_nr.h \
 ../LCD/inc/attributes.h:
 
 ../ENCODER/inc/tm_stm32f4_exti.h:
+
+../Audio_DSP/inc/codec.h:
+
+../Audio_DSP/inc/stm32f4_discovery_audio_codec.h:
+
+../LCD/inc/ui.h:
+
+../LCD/inc/tm_stm32f4_hd44780.h:
+
+../ENCODER/inc/tm_stm32f4_button.h:
+
+../LCD/inc/tm_stm32f4_delay.h:

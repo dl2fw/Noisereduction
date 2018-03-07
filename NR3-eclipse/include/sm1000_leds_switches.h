@@ -46,7 +46,7 @@ int switch_ptt(void);
 int switch_select(void);
 int switch_back(void);
 int ext_ptt(void);
-int nr_on(void);
+//int nr_on(void);
 
 #define DEBOUNCE_DELAY 50 /*!< Delay to wait while switch bounces */
 
