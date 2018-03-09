@@ -3,7 +3,7 @@
 #include "stm32f4_adc.h"
 #include "stm32f4_dac.h"
 
-//#include "stm32f4_vrom.h
+#include "stm32f4_vrom.h"
 
 #include "sm1000_leds_switches.h"
 #include <stm32f4xx_gpio.h>
@@ -18,12 +18,12 @@
 #include "tm_stm32f4_exti.h"
 #include "codec.h"
 #include "stm32f4_discovery_audio_codec.h"
+#include "tm_stm32f4_delay.h"
 #include "ui.h"
+#include "eeprom_access.h"
 
 
 
-
-//void spectral_noise_reduction_3 (short*);
 
 
 
@@ -31,11 +31,23 @@
 int main(void) {
 
 
-    NR3.power_threshold_int = 75;
-    NR3.alpha_int = 95;
-    NR3.asnr_int = 30;
-    NR3.width_int = 15;
+  //try to read presets from our virtual EEPROM
+  NR3.Version = 10;
+  write_confirmed = 0;
+  selected = 0;
 
+  int16_t result = load_settings();
+
+  if (result < 0)  // failed to find settings in EEPROM, load default values
+    {
+      TM_HD44780_Puts(0, 2,"reading default");
+
+      NR3.power_threshold_int = 74;
+      NR3.alpha_int = 95;
+      NR3.asnr_int = 30;
+      NR3.width_int = 15;
+
+    }
 
 
     int            n_samples_16k;
@@ -115,7 +127,13 @@ int main(void) {
 
                     menu_handling();
 
+                    if ((write_confirmed == 1) && (selected == 0))
+                      {
 
+			write_settings();
+			TM_HD44780_Puts(0, 2,"*** WRITING ***");
+			write_confirmed = 0;
+                      }
                 }
 
     } /* while(1) ... */

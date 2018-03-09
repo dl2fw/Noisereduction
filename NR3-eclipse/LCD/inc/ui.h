@@ -5,12 +5,15 @@
 
 #include "audio_nr.h"
 
-#ifndef __UI_H
-#define __UI_H
+#ifndef _UI_H
+#define _UI_H
 
 
 TM_RE_t RE1_Data;
 
+int32_t write_confirmed;
+
+int16_t selected; // is 1 as long as an item is selected to change
 
 
 

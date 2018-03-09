@@ -34,16 +34,18 @@ src/main.o: ../src/main.c \
  ../Drivers/STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_fsmc.h \
  ../Audio_DSP/inc/audio_nr.h ../Drivers/CMSIS/Include/arm_math.h \
  ../Drivers/CMSIS/Include/core_cm4.h ../include/stm32f4_adc.h \
- ../include/stm32f4_dac.h ../include/sm1000_leds_switches.h \
- ../LCD/inc/tm_stm32f4_hd44780.h ../LCD/inc/defines.h \
- ../LCD/inc/tm_stm32f4_delay.h ../LCD/inc/attributes.h \
- ../LCD/inc/tm_stm32f4_gpio.h ../ENCODER/inc/tm_stm32f4_rotary_encoder.h \
- ../LCD/inc/defines.h ../LCD/inc/tm_stm32f4_gpio.h \
- ../ENCODER/inc/tm_stm32f4_exti.h ../LCD/inc/attributes.h \
- ../ENCODER/inc/tm_stm32f4_exti.h ../Audio_DSP/inc/codec.h \
- ../Audio_DSP/inc/stm32f4_discovery_audio_codec.h ../LCD/inc/ui.h \
+ ../include/stm32f4_dac.h ../include/stm32f4_vrom.h \
+ ../include/sm1000_leds_switches.h ../LCD/inc/tm_stm32f4_hd44780.h \
+ ../LCD/inc/defines.h ../LCD/inc/tm_stm32f4_delay.h \
+ ../LCD/inc/attributes.h ../LCD/inc/tm_stm32f4_gpio.h \
+ ../ENCODER/inc/tm_stm32f4_rotary_encoder.h ../LCD/inc/defines.h \
+ ../LCD/inc/tm_stm32f4_gpio.h ../ENCODER/inc/tm_stm32f4_exti.h \
+ ../LCD/inc/attributes.h ../ENCODER/inc/tm_stm32f4_exti.h \
+ ../Audio_DSP/inc/codec.h \
+ ../Audio_DSP/inc/stm32f4_discovery_audio_codec.h \
+ ../LCD/inc/tm_stm32f4_delay.h ../LCD/inc/ui.h \
  ../LCD/inc/tm_stm32f4_hd44780.h ../ENCODER/inc/tm_stm32f4_button.h \
- ../LCD/inc/tm_stm32f4_delay.h
+ ../include/eeprom_access.h
 
 ../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h:
 
@@ -121,6 +123,8 @@ src/main.o: ../src/main.c \
 
 ../include/stm32f4_dac.h:
 
+../include/stm32f4_vrom.h:
+
 ../include/sm1000_leds_switches.h:
 
 ../LCD/inc/tm_stm32f4_hd44780.h:
@@ -149,10 +153,12 @@ src/main.o: ../src/main.c \
 
 ../Audio_DSP/inc/stm32f4_discovery_audio_codec.h:
 
+../LCD/inc/tm_stm32f4_delay.h:
+
 ../LCD/inc/ui.h:
 
 ../LCD/inc/tm_stm32f4_hd44780.h:
 
 ../ENCODER/inc/tm_stm32f4_button.h:
 
-../LCD/inc/tm_stm32f4_delay.h:
+../include/eeprom_access.h:

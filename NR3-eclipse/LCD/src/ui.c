@@ -6,12 +6,13 @@
 
 
 static int16_t menu_pos=0; // keeps the actual menu position
-static int16_t selected = 0; // is 1 as long as an item is selected to change
+
 static int16_t trigger_select = 0;
 
 static int32_t nr_on = 0;
 static int32_t changed_item = 0;
-
+//static int32_t write_confirmed = 0;
+//static int16_t selected = 0; // is 1 as long as an item is selected to change
 // sets up the encoder, encoder button  and LCD for our user interface
 
 void init_lcd_enc()
@@ -92,7 +93,7 @@ void menu_handling()
       if (RE1_Data.Diff > 0)
 	{
 	  menu_pos++;
-	  if (menu_pos > 3) menu_pos = 3;
+	  if (menu_pos > 4) menu_pos = 4;
 	}
       else if (RE1_Data.Diff < 0)
 	{
@@ -150,6 +151,18 @@ void menu_handling()
 
             break;
 
+    case 4:  // store to EEPROM
+
+      changed_item = modify_menu_item(&write_confirmed,1,0);
+
+
+    	if ((trigger_select == 1) || changed_item)
+    	  {
+    	    sprintf(buf, "save to eeprom  %1d", (int)(write_confirmed));
+    	    TM_HD44780_Puts(0, 2,buf);
+    	  }
+
+	    break;
 
   }
 
@@ -174,11 +187,13 @@ int32_t  modify_menu_item(int32_t * item, int32_t maxval, int32_t minval)
 	    if (RE1_Data.RE_Count > maxval)  {
 	    RE1_Data.RE_Count = maxval;
 	    RE1_Data.Absolute = maxval;
+	    RE1_Data.Rotation = TM_RE_Rotate_Nothing;
 	    }
 
 	    if (RE1_Data.RE_Count < minval)  {
 	    RE1_Data.RE_Count = minval;
 	    RE1_Data.Absolute = minval;
+	    RE1_Data.Rotation = TM_RE_Rotate_Nothing;
 	    }
 	    *item=(int32_t)RE1_Data.Absolute;
 	  }

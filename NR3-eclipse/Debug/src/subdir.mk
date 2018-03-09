@@ -5,11 +5,13 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../src/debugblinky.c \
+../src/eeprom_access.c \
 ../src/fifo.c \
 ../src/main.c \
 ../src/sm1000_leds_switches.c \
 ../src/stm32f4_adc.c \
 ../src/stm32f4_dac.c \
+../src/stm32f4_vrom.c \
 ../src/system_stm32f4xx.c 
 
 S_UPPER_SRCS += \
@@ -17,21 +19,25 @@ S_UPPER_SRCS += \
 
 OBJS += \
 ./src/debugblinky.o \
+./src/eeprom_access.o \
 ./src/fifo.o \
 ./src/main.o \
 ./src/sm1000_leds_switches.o \
 ./src/startup_stm32f4xx.o \
 ./src/stm32f4_adc.o \
 ./src/stm32f4_dac.o \
+./src/stm32f4_vrom.o \
 ./src/system_stm32f4xx.o 
 
 C_DEPS += \
 ./src/debugblinky.d \
+./src/eeprom_access.d \
 ./src/fifo.d \
 ./src/main.d \
 ./src/sm1000_leds_switches.d \
 ./src/stm32f4_adc.d \
 ./src/stm32f4_dac.d \
+./src/stm32f4_vrom.d \
 ./src/system_stm32f4xx.d 
 
 S_UPPER_DEPS += \
