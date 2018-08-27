@@ -33,6 +33,8 @@
 #include "stm32f4_vrom.h"
 #include "stm32f4xx_flash.h"
 #include "stm32f4xx_crc.h"
+#include "stdio.h"
+#include "tm_stm32f4_hd44780.h"
 
 #define VROM_SECT_SZ		(16384)	/*!< Size of a flash sector */
 #define VROM_SECT_CNT		(3)	/*!< Number of sectors */
@@ -198,38 +200,60 @@ static uint32_t vrom_crc32(
 static const struct vrom_data_block_t* vrom_find(uint8_t rom, uint8_t idx)
 {
 	int sector, block;
+	char buf[2];
+	  //TM_HD44780_Puts(0, 0,"                   ");
 
 	for (sector = 0; sector < VROM_SECT_CNT; sector++) {
 		const struct vrom_sector_idx_t* sect_hdr
 			= vrom_get_sector_hdr(sector);
 		if (sect_hdr->cycles_remain == UINT32_MAX)
 			/* unformatted */
-			continue;
+		  {
+		    //sprintf(buf, "u%1d",sector);
+		    //TM_HD44780_Puts(0, 0,buf);
+		    continue;
+		  }
 		for (block = 0; block < VROM_SECT_APP_BLOCK_CNT; block++) {
 			const struct vrom_data_block_t* block_ptr;
 			if (sect_hdr->flags[block] == UINT16_MAX)
 				/* unformatted */
-				continue;
+			  {
+			      //sprintf(buf, "U%1d%1d",sector,block);
+			      //TM_HD44780_Puts(4, 0,buf);
+			      continue;
+			      }
 			if (sect_hdr->flags[block] == 0)
 				/* obsolete */
-				continue;
-
+			  {
+			    //sprintf(buf, "O%1d%1d",sector,block);
+			    //TM_HD44780_Puts(8, 0,buf);
+			    continue;
+			  }
 			block_ptr = vrom_get_block(sector, block);
 
 			/* Verify the content */
 			if (vrom_crc32(block_ptr)
 					!= block_ptr->header.crc32)
 				/* corrupt */
-				continue;
-
+			  {
+			    //sprintf(buf, "C%1d%1d",sector,block);
+			    //TM_HD44780_Puts(12, 0,buf);
+			    //continue;
+			  }
 			if (block_ptr->header.rom != rom)
 				/* different ROM */
-				continue;
-
+			  {
+			    //sprintf(buf, "R%1d%1d",sector,block);
+			    //TM_HD44780_Puts(15, 0,buf);
+			    continue;
+			  }
 			if (block_ptr->header.idx != idx)
 				/* wrong index */
-				continue;
-
+			  {
+			    //sprintf(buf, "W%1d%1d",sector,block);
+			    //TM_HD44780_Puts(18, 0,buf);
+			    continue;
+			  }
 			return block_ptr;
 		}
 	}

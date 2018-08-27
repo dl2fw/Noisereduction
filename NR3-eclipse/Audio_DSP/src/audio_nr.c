@@ -3,7 +3,8 @@
 #include "arm_math.h"
 #include "arm_const_structs.h"
 #include "arm_common_tables.h"
-
+#include "tm_stm32f4_hd44780.h"
+#include "ui.h"
 
 void spectral_noise_reduction_3 (short* in_buffer)
 {
@@ -69,7 +70,12 @@ static float32_t 	X[NR_FFT_L_2 / 2][2]; // magnitudes of the current and the las
 	static int16_t  	nr_first_time =1;
 
 
-
+//******** some Variables for the spectrum and HK display
+	float32_t spectrum[20];
+	float32_t spec_part[25];
+	float32_t HK_display[20];
+	uint32_t  max_posi;
+	uint32_t  int_spec[20];
 
 
 // for 12ksps and FFT128
@@ -177,6 +183,35 @@ float32_t ph1y[NR_FFT_SIZE];
 			X[bindx][0] = (FFT_buffer[bindx * 2] * FFT_buffer[bindx * 2] + FFT_buffer[bindx * 2 + 1] * FFT_buffer[bindx * 2 + 1]);
 		}
 
+//********************LCD Spektrum in 1. row
+//we have 512 mirrored bins - it is a symmmetric FFT so we take only the lower 256
+if (get_menu_pos()==6)
+  {
+	  for (int s=0; s < 16; s++)  // but we have only 16 columns at our display
+	    {
+	      for (int q=0; q<11; q++) // so we take from 11 bins the maximum to display
+		spec_part[q] = X[s*11 + q + 11][0];  // 11*16=240, almost all :-), leave out the lower 12
+
+	      arm_max_f32(&spec_part[0],11,&spectrum[s],&max_posi); // take the maximum
+	      int_spec[s] = (int)(spectrum[s] / 3200000000);  // scale it fixed - later adaptive ???
+	      if (int_spec[s] > 7) int_spec[s] = 7; //limit it to 7
+	      TM_HD44780_PutCustom(s,0, int_spec[s]);  //plot it to our display
+
+	      for (int q=0; q<15; q++)   //now the same for our HK's - the reduction factors
+	      		spec_part[q] = Hk[s*11 + q + 11];  // use the same variable ... misleading
+
+	      arm_min_f32(&spec_part[0],11,&HK_display[s],&max_posi); // here we take the lowest factor
+	      int_spec[s] = (int)(HK_display[s] * 7.0); // HK's are between 0 and 1.0 ??
+	      if (int_spec[s] > 7) int_spec[s] = 7; //limit to 7
+	      TM_HD44780_PutCustom(s,1, int_spec[s]); //plot it to our display in the 2nd row
+
+	    }
+
+  }
+
+
+
+//******************************************
       if(nr_first_time == 2)
       {
  		  for(int bindx = 0; bindx < NR_FFT_L_2 / 2; bindx++)

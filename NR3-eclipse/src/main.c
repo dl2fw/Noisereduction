@@ -34,20 +34,26 @@ int main(void) {
   //try to read presets from our virtual EEPROM
   NR3.Version = 10;
   write_confirmed = 0;
+
   selected = 0;
+
+  init_lcd_enc();
+
 
   int16_t result = load_settings();
 
   if (result < 0)  // failed to find settings in EEPROM, load default values
     {
-      TM_HD44780_Puts(0, 2,"reading default");
+      TM_HD44780_Puts(0, 1,"reading default");
 
-      NR3.power_threshold_int = 74;
+      NR3.power_threshold_int = 75;
       NR3.alpha_int = 95;
       NR3.asnr_int = 30;
       NR3.width_int = 15;
 
     }
+  else
+    TM_HD44780_Puts(0, 1,"use EEPROM data");
 
 
     int            n_samples_16k;
@@ -83,7 +89,7 @@ int main(void) {
 
   // int button_count = 0;
 
-   init_lcd_enc();
+   //init_lcd_enc();
 
     while(1) {
 
@@ -103,8 +109,10 @@ int main(void) {
                             led_err(1);
                     }
 
-                    nr_active = nr_on_state();
-//                    nr_active = 1;
+  //                  nr_active = nr_on_state();
+                   if (NR_enabled == 1) nr_active = 1;
+		     else nr_active = 0;
+
 		    if (nr_active == 1) spectral_noise_reduction_3(adc16k); //takes a short, internal casting to float and back to short
 
                     dac1_write(adc16k, n_samples_16k);
@@ -131,8 +139,9 @@ int main(void) {
                       {
 
 			write_settings();
-			TM_HD44780_Puts(0, 2,"*** WRITING ***");
+			TM_HD44780_Puts(0, 1,"*** WRITING ***");
 			write_confirmed = 0;
+			TM_HD44780_Puts(0, 0,"*** finished ***");
                       }
                 }
 

@@ -9,7 +9,7 @@
 
 
 typedef struct {
-  uint16_t Version;
+  int32_t Version;
   int32_t alpha_int;//0..100
   int32_t asnr_int; //0..30
   int32_t power_threshold_int;  //0..100

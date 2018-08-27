@@ -12,6 +12,9 @@
 TM_RE_t RE1_Data;
 
 int32_t write_confirmed;
+int32_t NR_enabled;
+
+
 
 int16_t selected; // is 1 as long as an item is selected to change
 
@@ -23,5 +26,7 @@ void BUTTON1_EventHandler(TM_BUTTON_PressType_t);
 void BUTTON2_EventHandler(TM_BUTTON_PressType_t);
 int32_t modify_menu_item(int32_t *, int32_t, int32_t);
 int32_t nr_on_state();
+
+int16_t get_menu_pos();
 
 #endif
