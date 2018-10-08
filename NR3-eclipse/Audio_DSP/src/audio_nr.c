@@ -5,6 +5,7 @@
 #include "arm_common_tables.h"
 #include "tm_stm32f4_hd44780.h"
 #include "ui.h"
+#include "stdio.h"
 
 void spectral_noise_reduction_3 (short* in_buffer)
 {
@@ -107,7 +108,10 @@ static float32_t xt[NR_FFT_SIZE];
 float32_t xtr;
 float32_t ph1y[NR_FFT_SIZE];
 
-
+float32_t sig_power;
+uint8_t vox_det = 1;
+static uint8_t vox_was = 1;
+char buf[16];
 
 
 
@@ -175,13 +179,33 @@ float32_t ph1y[NR_FFT_SIZE];
     // NR_FFT
     // calculation is performed in-place the FFT_buffer [re, im, re, im, re, im . . .]
 
-
+	  sig_power = 0;
 
 	  for(int bindx = 0; bindx < NR_FFT_L_2 / 2; bindx++)
 		{
 		  //here we need squared magnitude
 			X[bindx][0] = (FFT_buffer[bindx * 2] * FFT_buffer[bindx * 2] + FFT_buffer[bindx * 2 + 1] * FFT_buffer[bindx * 2 + 1]);
+		if (bindx > 20) sig_power += X[bindx][0];  //calculate the signalpower to do a vox-function
 		}
+	  if (sig_power > 1000000001)
+	    {
+	      vox_det = 1; //value is experimental, has to be adjustable?
+	      if (vox_was == 0) // erase freeze message
+		{
+		  sprintf(buf, "                ");
+		  TM_HD44780_Puts(0, 0,buf);
+		}
+
+	      vox_was = 1;
+	    }
+	  else
+	    {
+	      vox_det = 0;
+	      sprintf(buf, "*****freeze*****");
+	      TM_HD44780_Puts(0, 0,buf);
+
+	      vox_was = 0;
+	    }
 
 //********************LCD Spektrum in 1. row
 //we have 512 mirrored bins - it is a symmmetric FFT so we take only the lower 256
@@ -226,7 +250,7 @@ if (get_menu_pos()==6)
 			  nr_first_time = 3;  // now we did all the necessary initialization to actually start the noise reduction
 		  }
       }
-     if (nr_first_time == 3)
+     if ((nr_first_time == 3) && (vox_det > 0))
      {
 
 	 nr_alpha = (float32_t)(NR3.alpha_int)/1000.0 + 0.899f;
