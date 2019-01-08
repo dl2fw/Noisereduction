@@ -5,7 +5,7 @@
 #include "stdio.h"
 
 
-static int16_t menu_pos=0; // keeps the actual menu position
+static int16_t menu_pos = 6; // keeps the actual menu position
 
 static int16_t trigger_select = 0;
 
@@ -153,6 +153,20 @@ void BUTTON1_EventHandler(TM_BUTTON_PressType_t type) {
 	    //	TM_HD44780_Puts(0, 3,"long pressed");
 	}
     }
+  else // Menu Pos = 6 - we are in Spectrum Mode! Push Button to toggle NR On / OFF
+    {
+      if (type == TM_BUTTON_PressType_OnPressed) {
+      	//TM_HD44780_Puts(0, 3,"pressed");
+          } else if (type == TM_BUTTON_PressType_Normal) {
+
+      	if (NR3.NR_enabled == 0) NR3.NR_enabled = 1;
+      	else NR3.NR_enabled = 0;
+
+          }
+      	else {
+      	    //	TM_HD44780_Puts(0, 3,"long pressed");
+      	}
+    }
     }
 
 void BUTTON2_EventHandler(TM_BUTTON_PressType_t type) {
@@ -198,7 +212,7 @@ void menu_handling()
 	  TM_HD44780_Puts(0, 1,buf);
 
 	  menu_pos++;
-	  if (menu_pos > 6) menu_pos = 6;
+	  if (menu_pos > 10) menu_pos = 10;
 	}
       else if (RE1_Data.Diff < 0)
 	{
@@ -299,7 +313,7 @@ void menu_handling()
 
     case 5:  // switch NR ON OFF
 
-        changed_item = modify_menu_item(&NR_enabled,1,0);
+        changed_item = modify_menu_item(&NR3.NR_enabled,1,0);
 
 
       	if ((trigger_select == 1) || changed_item || was_in != 5)
@@ -307,7 +321,7 @@ void menu_handling()
 	    sprintf(buf, "                ");
 	    TM_HD44780_Puts(0, 0,buf);
 	    TM_HD44780_Puts(0, 1,buf);
-      	    sprintf(buf, "NR ON/OFF     %1d", (int)(NR_enabled));
+      	    sprintf(buf, "NR ON/OFF     %1d", (int)(NR3.NR_enabled));
       	    TM_HD44780_Puts(0, 1,buf);
       	  }
       	was_in = 5;
@@ -331,8 +345,81 @@ void menu_handling()
 
           break;
 
+    case 7:  // switch NB ON OFF
+
+            changed_item = modify_menu_item(&NR3.NB_enabled,1,0);
+
+
+          	if ((trigger_select == 1) || changed_item || was_in != 6)
+          	  {
+    	    sprintf(buf, "                ");
+    	    TM_HD44780_Puts(0, 0,buf);
+    	    TM_HD44780_Puts(0, 1,buf);
+          	    sprintf(buf, "NB ON/OFF     %1d", (int)(NR3.NB_enabled));
+          	    TM_HD44780_Puts(0, 1,buf);
+          	  }
+          	was_in = 7;
+          	changed_item=0;
+          	break;
+
+    case 8:  // switch NB ON OFF
+
+                changed_item = modify_menu_item(&NR3.det_access,49,0);
+
+
+              	if ((trigger_select == 1) || changed_item || was_in != 7)
+              	  {
+        	    sprintf(buf, "                ");
+        	    TM_HD44780_Puts(0, 0,buf);
+        	    TM_HD44780_Puts(0, 1,buf);
+
+        	    sprintf(buf, "da%1d", (int)(NR3.det_access));
+        	    TM_HD44780_Puts(0, 0,buf);
+        	    sprintf(buf, "po%1d", (int)(pulse_position[NR3.det_access]));
+        	    TM_HD44780_Puts(8, 0,buf);
+              	    sprintf(buf, "pulse_len   %1d", (int)(pulse_length[NR3.det_access]));
+              	    TM_HD44780_Puts(0, 1,buf);
+              	  }
+              	was_in = 8;
+              	changed_item=0;
+              	break;
+
+    case 9:  // check for Problems
+
+                   changed_item = modify_menu_item(&NR3.ka1,49,0);
+
+
+                 	if ((trigger_select == 1) || changed_item || was_in != 8)
+                 	  {
+                 	   sprintf(buf, "                ");
+                 	   TM_HD44780_Puts(0, 0,buf);
+                 	   TM_HD44780_Puts(0, 1,buf);
+                 	   sprintf(buf, "ka1       : %3d", (int)(NR3.ka1));
+                 	   TM_HD44780_Puts(0, 1,buf);
+                 	  }
+                 	was_in = 9;
+                 	changed_item=0;
+                 	break;
+    case 10:  // check for Problems
+
+                       changed_item = modify_menu_item(&NR3.ka2,49,0);
+
+
+                     	if ((trigger_select == 1) || changed_item || was_in != 9)
+                     	  {
+			   sprintf(buf, "                ");
+			   TM_HD44780_Puts(0, 0,buf);
+			   TM_HD44780_Puts(0, 1,buf);
+			   sprintf(buf, "ka2       : %3d", (int)(NR3.ka2));
+			   TM_HD44780_Puts(0, 1,buf);
+                     	  }
+                     	was_in = 10;
+                     	changed_item=0;
+                     	break;
+
 
   }
+
 
 
 }

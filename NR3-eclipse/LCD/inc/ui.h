@@ -12,11 +12,15 @@
 TM_RE_t RE1_Data;
 
 int32_t write_confirmed;
-int32_t NR_enabled;
+//int32_t NR_enabled;
 
 
 
 int16_t selected; // is 1 as long as an item is selected to change
+
+int32_t pulse_position[100];//only used for NB test
+int32_t pulse_length[100];//only used for NB test
+int32_t stop_feedback;//only used for NB test
 
 
 

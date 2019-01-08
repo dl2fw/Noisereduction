@@ -113,6 +113,7 @@ uint8_t vox_det = 1;
 static uint8_t vox_was = 1;
 char buf[16];
 
+float32_t Energy_dummy; //unused - just to hand it to a function
 
 
     if(nr_first_time == 1)
@@ -165,7 +166,16 @@ char buf[16];
               FFT_buffer[NR_FFT_L_2 + i * 2] = (float32_t)in_buffer[i+ k * (NR_FFT_L_2 / 2)]; // real
               FFT_buffer[NR_FFT_L_2 + i * 2 + 1] = 0.0;
           }
-    /////////////////////////////////7
+    /////////////////////////////////
+       //******   Here is a good place to call our noiseblanker
+       //******   as we have 2 consecutive Frames (2048 Samples) available in one buffer
+       //******   the Noiseblanker would work twice on all samples and we don't have any border-problems
+    ////////////////////////////////
+
+
+    if (NR3.NB_enabled) alt_noise_blanking(FFT_buffer,NR_FFT_L_2, 32,&Energy_dummy );
+
+
     // WINDOWING
 
 
@@ -369,6 +379,11 @@ if (get_menu_pos()==6)
 // end of musical noise reduction
 	}	//end of "if ts.nr_first_time == 3"
 
+if (!NR3.NR_enabled) //if NR enabled set the HK's to 1.0
+  {
+    for(int bindx = 0; bindx < NR_FFT_L_2 / 2; bindx++)
+      Hk[bindx]=1.0;
+  }
 
         // FINAL SPECTRAL WEIGHTING: Multiply current FFT results with NR_FFT_buffer for 64 bins with the 64 bin-specific gain factors
               // only do this for the bins inside the filter passband
@@ -411,3 +426,408 @@ if (get_menu_pos()==6)
 
 }
 
+
+
+//alt noise blanking is trying to localize some impulse noise within the samples and after that
+//trying to replace corrupted samples by linear predicted samples.
+//therefore, first we calculate the lpc coefficients which represent the actual status of the
+//speech or sound generating "instrument" (in case of speech this is an estimation of the current
+//filter-function of the voice generating tract behind our lips :-) )
+//after finding this function we inverse filter the actual samples by this function
+//so we are eliminating the speech, but not the noise. Then we do a matched filtering an thereby detecting impulses
+//After that we threshold the remaining samples by some
+//level and so detecting impulse noise's positions within the current frame - if one (or more) impulses are there.
+//finally some area around the impulse position will be replaced by predicted samples from both sides (forward and
+//backward prediction)
+//hopefully we have enough processor power left....
+
+void alt_noise_blanking(float* insamp,int Nsam, int order, float* E )  //Nsam = 128
+{
+
+#define boundary_blank 		14 // for first trials very large!!!!
+#define impulse_length 		15 // has to be odd!!!! 7 / 3 should be enough
+#define PL             		7 // has to be (impulse_length-1)/2 !!!!
+#define MAX_PULSE_N		50
+#define MAX_PULSE_LENGTH	50
+#define MIN_ORDER		10
+#define MIN_PULSE_LENGTH	5
+//#define order         10 // lpc's order
+    arm_fir_instance_f32 LPC;
+    float32_t lpcs[order+1]; // we reserve one more than "order" because of a leading "1"
+    float32_t reverse_lpcs[order+1]; //this takes the reversed order lpc coefficients
+    float32_t firStateF32[Nsam + order];
+    float32_t tempsamp[Nsam];
+
+    //static float32_t last_frame_end[order+PL]; //this takes the last samples from the previous frame to do the prediction within the boundaries
+
+    static int32_t frame_count=0;  //only used for the distortion insertion - can alter be deleted
+
+
+    //float32_t R[order+1];  // takes the autocorrelation results
+    //float32_t k,alfa;
+
+    //float32_t any[order+1];  //some internal buffers for the levinson durben algorithm
+    float32_t Rfw[impulse_length+order]; // takes the forward predicted audio restauration Nsam is much too big!!!
+    float32_t Rbw[impulse_length+order]; // takes the backward predicted audio restauration
+    float32_t Wfw[impulse_length],Wbw[impulse_length]; // taking linear windows for the combination of fwd and bwd
+
+    //float32_t s;
+    char buf[20];
+    int32_t det_output[1024];
+    int32_t imp_start[1024];
+    int32_t imp_length[1024]; // much too long, has to be reduced
+    int32_t was_impulse = 0;
+    int32_t pulse_count = 0;
+
+
+    float32_t working_buffer[1024]; //here we have to extract the real samples from our insamp array
+    								      //necessary to watch for impulses as close to the frame boundaries as possible
+
+
+    if (frame_count > 10)     // insert a distorting pulse
+            {
+		//insamp[500]=insamp[500] + 9000;
+		//insamp[502]=insamp[502] + 9000;
+		//insamp[504]=insamp[504] + 9000;
+		///insamp[506]=insamp[506] + 9000;
+		insamp[508]=insamp[508] + 900;
+                insamp[510]=insamp[510] + 3000; // overlaying a short  distortion pulse +/-
+                insamp[512]=insamp[512] + 3000;
+                insamp[514]=insamp[514] - 1500; // overlaying a short  distortion pulse +/-
+                insamp[516]=insamp[516] - 1500;
+                insamp[518]=insamp[518] - 900;
+                //insamp[520]=insamp[520] - 900;
+                //insamp[522]=insamp[522] - 9000;
+                //insamp[524]=insamp[524] - 9000;
+                //insamp[526]=insamp[526] - 9000;
+                //insamp[528]=insamp[528] - 9000;
+                //insamp[530]=insamp[530] - 9000;
+
+            }
+
+        frame_count++;
+        if (frame_count > 11) frame_count=0;
+
+
+    //*****************************end of debug impulse generation
+
+    for (int i=0; i< Nsam; i++) working_buffer[i] = insamp[2 * i];// extract the real samples from the complex insamp array
+
+    lpc_calc(&working_buffer[0],Nsam,order,&lpcs[0]);
+
+    for (int o = 0; o < order+1; o++ )             //store the reverse order coefficients separately
+        reverse_lpcs[order-o]=lpcs[o];        // for the matched impulse filter
+
+    arm_fir_init_f32(&LPC,order+1,&reverse_lpcs[0],&firStateF32[0],Nsam);// we are using the same function as used in freedv
+
+    //arm_fir_f32(&LPC,insamp,tempsamp,Nsam); //do the inverse filtering to eliminate voice and enhance the impulses
+
+    arm_fir_f32(&LPC,&working_buffer[0],tempsamp,Nsam); //do the inverse filtering to eliminate voice and enhance the impulses
+
+    det(Nsam, order, tempsamp, det_output,NR3.ka1,NR3.ka2);
+
+    for (int w=0;w<Nsam;w++)
+      {
+	imp_start[w]=0;
+	imp_length[w]=0;
+      }
+
+    pulse_count = 0;
+
+	for (int v = order;v < Nsam;v++)
+	  {
+	   if (det_output[v] == 1)
+	     {
+	       if (was_impulse == 0) //it is a new impulse
+		 {
+		   imp_start[pulse_count] = v; //store the start position
+		   was_impulse = 1; //remember, that there was already an impulse
+		   imp_length[pulse_count]++; //increase the length
+		 }
+	       else
+		 if (was_impulse == 1) //the impulse is continuing
+		   {
+		     imp_length[pulse_count]++; // increase the length
+		   }
+	       }
+	   else if (was_impulse == 1)
+	     {
+	       was_impulse = 0;// at the end of every impulse increase the pulse_counter
+	       pulse_count++;
+	     }
+	   else
+	     {
+	       was_impulse = 0; // just for safety
+	     }
+	   if (pulse_count > (MAX_PULSE_N - 1)) pulse_count = MAX_PULSE_N - 1;
+	   }
+      stop_feedback = 1;
+
+
+      for(int y=0;y < pulse_count;y++)  // we need those just to display them
+	{
+	  pulse_position[y]=(imp_start[y] + (imp_length[y] / 2) ); //center position
+	  pulse_length[y]=imp_length[y];
+	}
+
+
+    arm_negate_f32(&lpcs[1],&lpcs[1],order);
+    arm_negate_f32(&reverse_lpcs[0],&reverse_lpcs[0],order);
+
+
+    for (int j=0; j < pulse_count; j++)
+    {
+	//set all pulses to Zero within pulseduration
+	for(int z=imp_start[j];z<(imp_start[j]+imp_length[j]);z++)
+	  working_buffer[z]=0.0;
+	//***********************************************
+
+
+	//       Impulse shouldn't be too long, and away from the boundaries
+	if ((imp_length[j] < 150) &&(imp_start[j] > order) && ((imp_start[j]+imp_length[j]+order) < Nsam)) //do this only, if we are not close to the start
+	  {
+        for (int k = 0; k<order; k++)   // we have to copy some samples from the original signal as
+        {                           // basis for the reconstructions - could be done by memcopy
+
+            Rfw[k]=working_buffer[imp_start[j] - order + k];
+
+        }
+
+        for (int i = 0; i < pulse_length[j]; i++) //now we calculate the forward and backward predictions
+        {
+            arm_dot_prod_f32(&reverse_lpcs[0],&Rfw[i],order,&Rfw[i+order]);
+        }
+        for (int c=0;c<pulse_length[j];c++)// now let's correct the samples in the buffer
+          //working_buffer[imp_start[j]-order+c+det_access]=Rfw[order+c];
+        working_buffer[imp_start[j]+c+NR3.det_access]=Rfw[order+c];
+
+
+    }
+    }
+
+    for (int i=0; i< Nsam; i++)
+      {
+	insamp[2 * i] = working_buffer[i]; // copy the samples back to the complex insamp array
+
+      }
+
+
+}
+
+
+
+
+void median (int32_t n, float32_t* a, float32_t* med)
+{
+    int32_t S0, S1, i, j, m, k;
+    float32_t x, t;
+    S0 = 0;
+    S1 = n - 1;
+    k = n / 2;
+    while (S1 > S0 + 1)
+    {
+        m = (S0 + S1) / 2;
+        t = a[m];
+        a[m] = a[S0 + 1];
+        a[S0 + 1] = t;
+        if (a[S0] > a[S1])
+        {
+            t = a[S0];
+            a[S0] = a[S1];
+            a[S1] = t;
+        }
+        if (a[S0 + 1] > a[S1])
+        {
+            t = a[S0 + 1];
+            a[S0 + 1] = a[S1];
+            a[S1] = t;
+        }
+        if (a[S0] > a[S0 + 1])
+        {
+            t = a[S0];
+            a[S0] = a[S0 + 1];
+            a[S0 + 1] = t;
+        }
+        i = S0 + 1;
+        j = S1;
+        x = a[S0 + 1];
+		do i++; while (a[i] < x);
+        do j--; while (a[j] > x);
+        while (j >= i)
+        {
+            t = a[i];
+            a[i] = a[j];
+            a[j] = t;
+			do i++; while (a[i] < x);
+            do j--; while (a[j] > x);
+        }
+        a[S0 + 1] = a[j];
+        a[j] = x;
+        if (j >= k) S1 = j - 1;
+        if (j <= k) S0 = i;
+    }
+    if (S1 == S0 + 1 && a[S1] < a[S0])
+    {
+        t = a[S0];
+        a[S0] = a[S1];
+        a[S1] = t;
+    }
+	*med = a[k];
+}
+
+
+void det(int32_t Nsam, int32_t asize, float32_t* v, int32_t* detout, int32_t k1, int32_t k2)
+{
+
+    //const float32_t k1=8.0;  // some parameters for our detection algo
+    //const float32_t k2=20.0;
+    const int 	    b_max=10;
+    const int 	    imp_pre=2;
+    const int 	    imp_post=2;
+
+
+    int32_t i, j;
+    float32_t medpwr, t1, t2;
+    int32_t bstate, bcount, bsamp;
+    float32_t vpwr[Nsam];
+    float32_t vp[Nsam];
+
+
+    //for (i = asize, j = 0; i < Nsam; i++, j++)
+    for (i = asize; i < Nsam; i++)
+	{
+	    vpwr[i] = v[i] * v[i];
+	//	vp[j] = vpwr[i];
+	}
+    for(i=0;i<Nsam-asize;i++)
+      vp[i]=vpwr[i+asize];
+
+    median(Nsam - asize, vp, &medpwr);
+  //medpwr=1000000;
+    t1 = (float32_t)k1 * medpwr;
+    t2 = 0.0;
+    for (i = asize; i < Nsam; i++)
+    {
+        if (vpwr[i] <= t1)
+            t2 += vpwr[i];
+        else if (vpwr[i] <= 2.0 * t1)
+			t2 += 2.0 * t1 - vpwr[i];
+    }
+    t2 *= (float32_t)k2 / (float32_t)(Nsam - asize);
+    for (i = asize; i < Nsam; i++)
+    {
+        if (vpwr[i] > t2)
+            detout[i] = 1;
+        else
+            detout[i] = 0;
+    }
+    bstate = 0;
+    bcount = 0;
+    bsamp = 0;
+    for (i = asize; i < Nsam; i++)
+    {
+        switch (bstate)
+        {
+            case 0:
+                if (detout[i] == 1) bstate = 1;
+                break;
+            case 1:
+                if (detout[i] == 0)
+                {
+                    bstate = 2;
+                    bsamp = i;
+                    bcount = 1;
+                }
+                break;
+            case 2:
+                ++bcount;
+                if (bcount > b_max)
+                    if (detout[i] == 1)
+                        bstate = 1;
+                    else
+                        bstate = 0;
+                else if (detout[i] == 1)
+                {
+                    for (j = bsamp; j < bsamp + bcount - 1; j++)
+                        detout[j] = 1;
+                    bstate = 1;
+                }
+                break;
+        }
+    }
+    //maybe too tolerant!
+    for (i = asize; i < (Nsam-1); i++) // remove all single detected impulses
+      {
+	if ((detout[i]==1) && (detout[i-1]==0) && (detout[i+1]==0))
+	  detout[i]=0;
+      }
+
+    for (i = asize; i < Nsam; i++)
+    {
+        if (detout[i] == 1)
+        {
+            for (j = i - 1; j > i - 1 - imp_pre; j--)
+                if (j >= asize) detout[j] = 1;
+        }
+    }
+    for (i = Nsam - 1; i >= asize; i--)
+    {
+        if (detout[i] == 1)
+        {
+            for (j = i + 1; j < i + 1 + imp_post; j++)
+                if (j < Nsam) detout[j] = 1;
+        }
+    }
+}
+
+
+void lpc_calc(float32_t* wb,int32_t ns,int32_t ord, float32_t* lpcs)
+{
+
+
+      float32_t R[ord+1];  // takes the autocorrelation results
+      float32_t k,alfa,s;
+
+      float32_t any[ord+1];  //some internal buffers for the levinson durben algorithm
+  // calculate the autocorrelation of insamp (moving by max. of #order# samples)
+  for(int i=0; i < (ord+1); i++)
+  {
+
+	arm_dot_prod_f32(&wb[0],&wb[i],ns-i,&R[i]); // R is carrying the crosscorrelations
+  }
+  // end of autocorrelation
+
+
+
+  //alternative levinson durben algorithm to calculate the lpc coefficients from the crosscorrelation
+
+  R[0] = R[0] * (1.0 + 1.0e-9);
+
+  lpcs[0] = 1;   //set lpc 0 to 1
+
+  for (int i=1; i < ord+1; i++)
+      lpcs[i]=0;                      // fill rest of array with zeros - could be done by memfill
+
+  alfa = R[0];
+
+  for (int m = 1; m <= ord; m++)
+  {
+      s = 0.0;
+      for (int u = 1; u < m; u++)
+          s = s + lpcs[u] * R[m-u];
+
+      k = -(R[m] + s) / alfa;
+
+      for (int v = 1;v < m; v++)
+          any[v] = lpcs[v] + k * lpcs[m-v];
+
+      for (int w = 1; w < m; w++)
+          lpcs[w] = any[w];
+
+      lpcs[m] = k;
+      alfa = alfa * (1 - k * k);
+  }
+
+  // end of levinson durben algorithm
+
+}
