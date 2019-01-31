@@ -1,5 +1,6 @@
 #include "stm32f4xx.h"
 #include "audio_nr.h"
+#include "samp_rate_conv.h"
 #include "stm32f4_adc.h"
 #include "stm32f4_dac.h"
 
@@ -57,13 +58,14 @@ int main(void) {
       NR3.ka1 = 8;
       NR3.ka2 = 20;
       NR3.det_access = 0;
+      NR3.a_corr = 10;
     }
   else
     TM_HD44780_Puts(0, 1,"use EEPROM data");
 
 
-    int            n_samples_16k;
-
+    int            n_samples_16K;
+    int            n_samples_8K;
 
 
     start_codec_ugly();
@@ -75,14 +77,25 @@ int main(void) {
 
     /* Set up ADCs/DACs */
 
-    dac_open(4 * NR_FFT_SIZE);
-    adc_open(ADC_FS_16KHZ, 4 * NR_FFT_SIZE);
+    //dac_open(4 * NR_FFT_SIZE);
+    //adc_open(ADC_FS_16KHZ, 4 * NR_FFT_SIZE);
 
 
-    n_samples_16k = NR_FFT_SIZE;
+    dac_open(8 * NR_FFT_SIZE);   //von 4 auf 8 geändert aufgrund Halbierung NR_FFT_SIZE
+    adc_open(ADC_FS_16KHZ, 8 * NR_FFT_SIZE);//     "
 
-    short  adc16k[n_samples_16k];
 
+    n_samples_16K = 2 * NR_FFT_SIZE;  // von 1 auf 2 erhöht. Grund s.o.
+    n_samples_8K = NR_FFT_SIZE;
+    short  adc16k[OS_TAPS_16K + n_samples_16K];
+    short  adc8k[n_samples_8K];
+    short  dac16k[n_samples_16K];
+    short  dac8k[OS_TAPS_8K + n_samples_8K];
+
+    for (int p=0; p < OS_TAPS_16K; p++)   // filter taps löschen
+	adc16k[p] = 0.0;
+    for (int p=0; p < OS_TAPS_8K; p++)
+    	dac8k[p] = 0.0;
 
     /* put outputs into a known state */
 
@@ -101,7 +114,7 @@ int main(void) {
 
                 /* ADC2 is the NF input (PA2), DAC1 is the NF Output (PA4) */
 
-                if (adc2_read(adc16k, n_samples_16k) == 0) {
+                if (adc2_read(&adc16k[OS_TAPS_16K], n_samples_16K) == 0) {
 
                     GPIOE->ODR = (1 << 3);  //HW test output
 
@@ -110,10 +123,13 @@ int main(void) {
                     /* clipping indicator */
 
                     led_err(0);
-                    for (int i=0; i<n_samples_16k; i++) {
-                        if (abs(adc16k[i]) > 28000)
+                    for (int i=0; i<n_samples_16K; i++) {
+                        if (abs(adc16k[OS_TAPS_16K + i]) > 28000)
                             led_err(1);
                     }
+
+                    fdmdv_16_to_8_short(adc8k,&adc16k[OS_TAPS_16K],n_samples_8K);//convert to internal 8ksamples / sec
+
 
   //                  nr_active = nr_on_state();
                    if (NR3.NR_enabled == 1) nr_active = 1;
@@ -121,9 +137,15 @@ int main(void) {
 
 		   // if (nr_active == 1) spectral_noise_reduction_3(adc16k); //takes a short, internal casting to float and back to short
 
-		    spectral_noise_reduction_3(adc16k);
+		    spectral_noise_reduction_3(adc8k);
 
-                    dac1_write(adc16k, n_samples_16k);
+		    for (int p = 0; p < n_samples_8K;p++)
+		      dac8k[OS_TAPS_8K + p] = adc8k[p];
+
+		    fdmdv_8_to_16_short(dac16k, &dac8k[OS_TAPS_8K], n_samples_8K);//convert back to 16ks/sec for the external world
+
+
+                    dac1_write(dac16k, n_samples_16K);
 /*
 		    if (nr_on()==1)
 		    {

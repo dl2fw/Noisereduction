@@ -212,7 +212,7 @@ void menu_handling()
 	  TM_HD44780_Puts(0, 1,buf);
 
 	  menu_pos++;
-	  if (menu_pos > 10) menu_pos = 10;
+	  if (menu_pos > 11) menu_pos = 11;
 	}
       else if (RE1_Data.Diff < 0)
 	{
@@ -416,6 +416,22 @@ void menu_handling()
                      	was_in = 10;
                      	changed_item=0;
                      	break;
+    case 11:  // check for Problems
+
+                           changed_item = modify_menu_item(&NR3.a_corr,50,1);
+
+
+                         	if ((trigger_select == 1) || changed_item || was_in != 9)
+                         	  {
+    			   sprintf(buf, "                ");
+    			   TM_HD44780_Puts(0, 0,buf);
+    			   TM_HD44780_Puts(0, 1,buf);
+    			   sprintf(buf, "a_corr    : %3d", (int)(NR3.a_corr));
+    			   TM_HD44780_Puts(0, 1,buf);
+                         	  }
+                         	was_in = 11;
+                         	changed_item=0;
+                         	break;
 
 
   }

@@ -6,7 +6,7 @@
 #include "tm_stm32f4_hd44780.h"
 #include "ui.h"
 #include "stdio.h"
-
+#include "audio_nb.h"
 void spectral_noise_reduction_3 (short* in_buffer)
 {
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -31,8 +31,8 @@ static uint8_t NR_init_counter = 0;
 
 
 //const float32_t tinc = 0.00533333; // frame time 5.3333ms
-//const float32_t tax=0.071;	// noise output smoothing time constant - absolut value in seconds
-//const float32_t tap=0.152;	// speech prob smoothing time constant  - absolut value in seconds
+const float32_t tax=0.071;	// noise output smoothing time constant - absolut value in seconds
+const float32_t tap=0.152;	// speech prob smoothing time constant  - absolut value in seconds
 const float32_t psthr=0.99;	// threshold for smoothed speech probability [0.99]
 const float32_t pnsaf=0.01;	// noise probability safety value [0.01]
 const float32_t psini=0.5;	// initial speech probability [0.5]
@@ -77,7 +77,7 @@ static float32_t 	X[NR_FFT_L_2 / 2][2]; // magnitudes of the current and the las
 	float32_t HK_display[20];
 	uint32_t  max_posi;
 	uint32_t  int_spec[20];
-
+	float32_t a_corr=1.0;
 
 // for 12ksps and FFT128
 //NR2.ax = 0.9276; 		//expf(-tinc / tax);
@@ -88,9 +88,15 @@ static float32_t 	X[NR_FFT_L_2 / 2][2]; // magnitudes of the current and the las
 //ap = 0.8691;
 
 // for 16ksps and FFT1024
-ax = 0.63720;
-ap = 0.81020;
+//ax = 0.63720;
+//ap = 0.81020;
 
+//for 8ksps and FFT512 same as above (same frame rate!!)
+
+// for 8ksps and FFT1024
+
+ax = 0.406;
+ap = 0.6564;
 
 
 //NR2.xih1 = 31.62; 		//powf(10, (float32_t)NR2.asnr / 10.0);
@@ -136,13 +142,26 @@ float32_t Energy_dummy; //unused - just to hand it to a function
 
 				  pslp[bindx] = 0.5;
 
+				  xt[bindx] = 0.5;
 			}
 
      //Calculating the FFT Window
-		for(int bindx = 0; bindx < NR_FFT_L_2; bindx++)
-			SQRT_von_Hann[bindx] = sqrtf(0.50*(1-cosf(2*3.1415926535*(float)bindx/(float)(NR_FFT_L_2 -1))));
 
-        nr_first_time = 2; // we need to do some more a bit later down
+	float32_t corr_sum =0;
+	float32_t corr_gain;
+
+		for(int bindx = 0; bindx < NR_FFT_L_2; bindx++)
+		  {
+		    //SQRT_von_Hann[bindx] = sqrtf(0.50*(1-cosf(2*3.1415926535*(float)bindx/(float)(NR_FFT_L_2 -1))));
+		    SQRT_von_Hann[bindx] = sqrtf(0.54-0.46*cosf(2*3.1415926535*(float)bindx/(float)(NR_FFT_L_2 -1)));
+		    corr_sum += SQRT_von_Hann[bindx];
+
+		  }
+		corr_gain = corr_sum / NR_FFT_L_2;
+		for(int bindx = 0; bindx < NR_FFT_L_2; bindx++)
+		  SQRT_von_Hann[bindx] *= corr_gain;
+
+		nr_first_time = 2; // we need to do some more a bit later down
     }
 
     for(int k = 0; k < 1; k++) // 1 for 256er FFT
@@ -170,11 +189,16 @@ float32_t Energy_dummy; //unused - just to hand it to a function
        //******   Here is a good place to call our noiseblanker
        //******   as we have 2 consecutive Frames (2048 Samples) available in one buffer
        //******   the Noiseblanker would work twice on all samples and we don't have any border-problems
-    ////////////////////////////////
+    //////////////////////////////
 
+//***************************************************
+  //  if (NR3.NB_enabled) alt_noise_blanking(FFT_buffer,NR_FFT_L_2, 32,&Energy_dummy );
 
-    if (NR3.NB_enabled) alt_noise_blanking(FFT_buffer,NR_FFT_L_2, 32,&Energy_dummy );
+          if (NR3.NB_enabled)
+            execFrame(FFT_buffer, 2 * NR_FFT_SIZE, 32, 1, 0.5);
+//               source, size, order der lpc, passes, pmultmin
 
+//******************************************************
 
     // WINDOWING
 
@@ -186,6 +210,7 @@ float32_t Energy_dummy; //unused - just to hand it to a function
               //arm_cfft_f32(&arm_cfft_sR_f32_len2048, FFT_buffer, 0, 1);
 			 //arm_cfft_f32(&arm_cfft_sR_f32_len256, FFT_buffer, 0, 1);
 			 arm_cfft_f32(&arm_cfft_sR_f32_len1024, FFT_buffer, 0, 1);
+			// arm_cfft_f32(&arm_cfft_sR_f32_len512, FFT_buffer, 0, 1);
     // NR_FFT
     // calculation is performed in-place the FFT_buffer [re, im, re, im, re, im . . .]
 
@@ -193,7 +218,7 @@ float32_t Energy_dummy; //unused - just to hand it to a function
 
 	  for(int bindx = 0; bindx < NR_FFT_L_2 / 2; bindx++)
 		{
-		  //here we need squared magnitude
+		  //here we need squared magnitude  -  we take only one half of buffer - symmetric!!!
 			X[bindx][0] = (FFT_buffer[bindx * 2] * FFT_buffer[bindx * 2] + FFT_buffer[bindx * 2 + 1] * FFT_buffer[bindx * 2 + 1]);
 		if (bindx > 20) sig_power += X[bindx][0];  //calculate the signalpower to do a vox-function
 		}
@@ -250,8 +275,10 @@ if (get_menu_pos()==6)
       {
  		  for(int bindx = 0; bindx < NR_FFT_L_2 / 2; bindx++)
 		  {
-			  Nest[bindx] = Nest[bindx] + 0.05* X[bindx][0];// we do it 20 times to average over 20 frames for app. 100ms only on NR_on/bandswitch/modeswitch,...
-			  xt[bindx] = psini * Nest[bindx];
+			//  Nest[bindx] = Nest[bindx] + 0.05* X[bindx][0];// we do it 20 times to average over 20 frames for app. 100ms only on NR_on/bandswitch/modeswitch,...
+			//  xt[bindx] = psini * Nest[bindx];
+		  //init now done Warrens style!
+
 		  }
 		  NR_init_counter++;
 		  if (NR_init_counter > 19)//average over 20 frames for app. 100ms
@@ -268,8 +295,22 @@ if (get_menu_pos()==6)
 	 asnr =	NR3.asnr_int;
 	 width = NR3.width_int;
 
+	 //###########################
+
+	// ax = 0.63720;
+	// ap = 0.81020;
+
+	 ax = 0.406;
+	 ap = 0.6564;
 
 
+	 a_corr = (float32_t)NR3.a_corr / 10.0f;
+
+	 ax=expf(-a_corr * NR_FFT_SIZE/8000/tax);  //tax is a timeconstant of 71ms
+	 ap=expf(-a_corr * NR_FFT_SIZE/8000/tap);  //tap is a timeconstant of 152ms
+
+
+	 //###########################
 
  //new noise estimate MMSE based!!!
 
@@ -296,7 +337,13 @@ if (get_menu_pos()==6)
 			 {
 			   SNR_post[bindx] = fmax(fmin(X[bindx][0] / xt[bindx],1000.0), snr_prio_min); // limited to +30 /-15 dB, might be still too much of reduction, let's try it?
 
-			   SNR_prio[bindx] = fmax(nr_alpha * Hk_old[bindx] + (1.0f - nr_alpha) * fmax(SNR_post[bindx] - 1.0f, 0.0f), 0.0f);
+			   // original mchf:SNR_prio[bindx] = fmax(nr_alpha * Hk_old[bindx] + (1.0f - nr_alpha) * fmax(SNR_post[bindx] - 1.0f, 0.0f), 0.0f);
+
+			   if(NR3.det_access < 5)  //switch between old (<5) and Warren's >=5
+			     SNR_prio[bindx] = fmax(nr_alpha * Hk_old[bindx] + (1.0f - nr_alpha) * fmax(SNR_post[bindx] - 1.0f, 0.0f), 0.0f);
+			   else
+			     SNR_prio[bindx] = nr_alpha * Hk_old[bindx] + (1.0f - nr_alpha) * fmax(SNR_post[bindx] - 1.0f, 1.0e-30f); // bei Warren
+
 			 }
 
 
@@ -307,9 +354,18 @@ if (get_menu_pos()==6)
 		{
 			  float32_t v = SNR_prio[bindx] * SNR_post[bindx] / (1.0 + SNR_prio[bindx]);
 
-			  Hk[bindx] = fmax(1.0 / SNR_post[bindx] * sqrtf((0.7212 * v + v * v)),0.001); //limit HK's to 0.001'
+			  if(NR3.det_access < 5)
 
+			    {
+			      Hk[bindx] = fmin(fmax(1.0 / SNR_post[bindx] * sqrtf((0.7212 * v + v * v)),0.0001),10000); //limit HK's to 0.001'
+
+			    }
+			  else //warren's approach:
+			    {
+			      Hk[bindx] = fmin(fmax(SNR_prio[bindx] / (1 + SNR_prio[bindx]) * expf(fmin(70.0,0.5 * e1xb(v))),0.0001),10000);
+			    }
 			  Hk_old[bindx] = SNR_post[bindx] * Hk[bindx] * Hk[bindx]; //
+
 
 
 			  /*if(!(ts.dsp_active & DSP_NR_ENABLE)) // if NR is not enabled (but notch is enabled !)
@@ -406,6 +462,9 @@ if (!NR3.NR_enabled) //if NR enabled set the HK's to 1.0
           //arm_cfft_f32(&arm_cfft_sR_f32_len2048, FFT_buffer, 1, 1);
     	  //arm_cfft_f32(&arm_cfft_sR_f32_len256, FFT_buffer, 1, 1);
     	  arm_cfft_f32(&arm_cfft_sR_f32_len1024, FFT_buffer, 1, 1);
+    	  //  arm_cfft_f32(&arm_cfft_sR_f32_len512, FFT_buffer, 1, 1);
+
+
     	  for (int idx = 0; idx < NR_FFT_L_2; idx++)
           {
     	  	  FFT_buffer[idx * 2] *= SQRT_von_Hann[idx];
@@ -440,6 +499,9 @@ if (!NR3.NR_enabled) //if NR enabled set the HK's to 1.0
 //finally some area around the impulse position will be replaced by predicted samples from both sides (forward and
 //backward prediction)
 //hopefully we have enough processor power left....
+
+
+/*
 
 void alt_noise_blanking(float* insamp,int Nsam, int order, float* E )  //Nsam = 128
 {
@@ -617,168 +679,8 @@ void alt_noise_blanking(float* insamp,int Nsam, int order, float* E )  //Nsam = 
 
 
 
-void median (int32_t n, float32_t* a, float32_t* med)
-{
-    int32_t S0, S1, i, j, m, k;
-    float32_t x, t;
-    S0 = 0;
-    S1 = n - 1;
-    k = n / 2;
-    while (S1 > S0 + 1)
-    {
-        m = (S0 + S1) / 2;
-        t = a[m];
-        a[m] = a[S0 + 1];
-        a[S0 + 1] = t;
-        if (a[S0] > a[S1])
-        {
-            t = a[S0];
-            a[S0] = a[S1];
-            a[S1] = t;
-        }
-        if (a[S0 + 1] > a[S1])
-        {
-            t = a[S0 + 1];
-            a[S0 + 1] = a[S1];
-            a[S1] = t;
-        }
-        if (a[S0] > a[S0 + 1])
-        {
-            t = a[S0];
-            a[S0] = a[S0 + 1];
-            a[S0 + 1] = t;
-        }
-        i = S0 + 1;
-        j = S1;
-        x = a[S0 + 1];
-		do i++; while (a[i] < x);
-        do j--; while (a[j] > x);
-        while (j >= i)
-        {
-            t = a[i];
-            a[i] = a[j];
-            a[j] = t;
-			do i++; while (a[i] < x);
-            do j--; while (a[j] > x);
-        }
-        a[S0 + 1] = a[j];
-        a[j] = x;
-        if (j >= k) S1 = j - 1;
-        if (j <= k) S0 = i;
-    }
-    if (S1 == S0 + 1 && a[S1] < a[S0])
-    {
-        t = a[S0];
-        a[S0] = a[S1];
-        a[S1] = t;
-    }
-	*med = a[k];
-}
 
 
-void det(int32_t Nsam, int32_t asize, float32_t* v, int32_t* detout, int32_t k1, int32_t k2)
-{
-
-    //const float32_t k1=8.0;  // some parameters for our detection algo
-    //const float32_t k2=20.0;
-    const int 	    b_max=10;
-    const int 	    imp_pre=2;
-    const int 	    imp_post=2;
-
-
-    int32_t i, j;
-    float32_t medpwr, t1, t2;
-    int32_t bstate, bcount, bsamp;
-    float32_t vpwr[Nsam];
-    float32_t vp[Nsam];
-
-
-    //for (i = asize, j = 0; i < Nsam; i++, j++)
-    for (i = asize; i < Nsam; i++)
-	{
-	    vpwr[i] = v[i] * v[i];
-	//	vp[j] = vpwr[i];
-	}
-    for(i=0;i<Nsam-asize;i++)
-      vp[i]=vpwr[i+asize];
-
-    median(Nsam - asize, vp, &medpwr);
-  //medpwr=1000000;
-    t1 = (float32_t)k1 * medpwr;
-    t2 = 0.0;
-    for (i = asize; i < Nsam; i++)
-    {
-        if (vpwr[i] <= t1)
-            t2 += vpwr[i];
-        else if (vpwr[i] <= 2.0 * t1)
-			t2 += 2.0 * t1 - vpwr[i];
-    }
-    t2 *= (float32_t)k2 / (float32_t)(Nsam - asize);
-    for (i = asize; i < Nsam; i++)
-    {
-        if (vpwr[i] > t2)
-            detout[i] = 1;
-        else
-            detout[i] = 0;
-    }
-    bstate = 0;
-    bcount = 0;
-    bsamp = 0;
-    for (i = asize; i < Nsam; i++)
-    {
-        switch (bstate)
-        {
-            case 0:
-                if (detout[i] == 1) bstate = 1;
-                break;
-            case 1:
-                if (detout[i] == 0)
-                {
-                    bstate = 2;
-                    bsamp = i;
-                    bcount = 1;
-                }
-                break;
-            case 2:
-                ++bcount;
-                if (bcount > b_max)
-                    if (detout[i] == 1)
-                        bstate = 1;
-                    else
-                        bstate = 0;
-                else if (detout[i] == 1)
-                {
-                    for (j = bsamp; j < bsamp + bcount - 1; j++)
-                        detout[j] = 1;
-                    bstate = 1;
-                }
-                break;
-        }
-    }
-    //maybe too tolerant!
-    for (i = asize; i < (Nsam-1); i++) // remove all single detected impulses
-      {
-	if ((detout[i]==1) && (detout[i-1]==0) && (detout[i+1]==0))
-	  detout[i]=0;
-      }
-
-    for (i = asize; i < Nsam; i++)
-    {
-        if (detout[i] == 1)
-        {
-            for (j = i - 1; j > i - 1 - imp_pre; j--)
-                if (j >= asize) detout[j] = 1;
-        }
-    }
-    for (i = Nsam - 1; i >= asize; i--)
-    {
-        if (detout[i] == 1)
-        {
-            for (j = i + 1; j < i + 1 + imp_post; j++)
-                if (j < Nsam) detout[j] = 1;
-        }
-    }
-}
 
 
 void lpc_calc(float32_t* wb,int32_t ns,int32_t ord, float32_t* lpcs)
@@ -830,4 +732,42 @@ void lpc_calc(float32_t* wb,int32_t ns,int32_t ord, float32_t* lpcs)
 
   // end of levinson durben algorithm
 
+}
+
+
+*/
+
+
+float32_t e1xb (float32_t x)
+{
+	float32_t e1, ga, r, t, t0;
+	int32_t k, m;
+	if (x == 0.0)
+		e1 = 1.0e30;
+	else if (x <= 1.0)
+	{
+        e1 = 1.0;
+        r = 1.0;
+
+        for (k = 1; k <= 25; k++)
+		{
+			r = -r * k * x / ((k + 1.0)*(k + 1.0));
+			e1 = e1 + r;
+			if ( fabs (r) <= fabs (e1) * 1.0e-15f )
+				break;
+        }
+
+        ga = 0.5772156649015328;
+        e1 = - ga - logf (x) + x * e1;
+	}
+      else
+	{
+        m = 20 + (int32_t)(80.0 / x);
+        t0 = 0.0;
+        for (k = m; k >= 1; k--)
+			t0 = (float32_t)k / (1.0 + k / (x + t0));
+        t = 1.0 / (x + t0);
+        e1 = expf (- x) * t;
+	}
+    return e1;
 }
