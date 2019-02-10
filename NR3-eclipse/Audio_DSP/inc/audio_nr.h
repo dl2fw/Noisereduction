@@ -6,6 +6,7 @@
 
 #define NR_FFT_SIZE 512  // vorher bei internal 16ks: 512
 #define NR_FFT_L_2 (NR_FFT_SIZE * 2)
+#define ovrlp 1
 
 
 typedef struct {
@@ -32,3 +33,9 @@ void spectral_noise_reduction_3 (short*);
 #endif //ifndef __AUDIO_NR_H
 
 float32_t e1xb (float32_t);
+void musical_noise_reduction(float32_t*, float32_t*);
+int16_t do_vox(float32_t*);
+void show_spectrum(float32_t*, float32_t*);
+void gain_calc(float32_t*, float32_t*);
+
+
