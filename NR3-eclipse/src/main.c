@@ -50,14 +50,14 @@ int main(void) {
       TM_HD44780_Puts(0, 1,"reading default");
 
       NR3.power_threshold_int = 75;
-      NR3.alpha_int = 95;
-      NR3.asnr_int = 30;
-      NR3.width_int = 15;
+      NR3.alpha_int = 80;
+      NR3.asnr_int = 15;
+      NR3.width_int = 6;
       NR3.NR_enabled = 0;
       NR3.NB_enabled = 0;
       NR3.ka1 = 8;
       NR3.ka2 = 20;
-      NR3.det_access = 0;
+      NR3.det_access = 7;
       NR3.a_corr = 10;
     }
   else
