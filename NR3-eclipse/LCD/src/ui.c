@@ -4,6 +4,7 @@
 #include "tm_stm32f4_exti.h"
 #include "stdio.h"
 
+#define NR_development  //enable extended menu structure for developments
 
 static int16_t menu_pos = 6; // keeps the actual menu position
 
@@ -212,7 +213,13 @@ void menu_handling()
 	  TM_HD44780_Puts(0, 1,buf);
 
 	  menu_pos++;
+
+#ifdef NR_development
 	  if (menu_pos > 11) menu_pos = 11;
+#else
+	  if (menu_pos > 6) menu_pos = 6;
+#endif
+
 	}
       else if (RE1_Data.Diff < 0)
 	{
@@ -344,6 +351,7 @@ void menu_handling()
 	    }
 
           break;
+#ifdef NR_development
 
     case 7:  // switch NB ON OFF
 
@@ -432,7 +440,7 @@ void menu_handling()
                          	was_in = 11;
                          	changed_item=0;
                          	break;
-
+#endif
 
   }
 

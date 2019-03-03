@@ -197,11 +197,10 @@ const   int16_t		incr = NR_FFT_SIZE / ovrlp;
 
 
     }  // end of "for...k.." loop which repeats the FFT_iFFT_chain ovrlp times !!!
-  for (int idx = 0; idx < NR_FFT_SIZE; idx++)
-  	{
-
-	in_buffer[idx] = in_buffer[idx] / ovrlp;  ///scale output ???
-  	}
+ // for (int idx = 0; idx < NR_FFT_SIZE; idx++)
+  //	{
+	//in_buffer[idx] = in_buffer[idx] / ovrlp;  ///scale output ???
+  //	}
 
 
 }
@@ -395,9 +394,9 @@ void gain_calc(float32_t* X, float32_t* Hk)
 static int16_t 		init_done = 0;
 static float32_t 	pslp[NR_FFT_SIZE / 2];
 static float32_t 	xt[NR_FFT_SIZE / 2];
-	   float32_t 	xtr;
-	   float32_t 	ph1y[NR_FFT_SIZE / 2];
-	   float32_t	ax;
+       float32_t 	xtr;
+       float32_t 	ph1y[NR_FFT_SIZE / 2];
+       float32_t	ax;
        float32_t	ap;
        float32_t	xih1;
        float32_t	xih1r;
@@ -406,13 +405,12 @@ static float32_t 	xt[NR_FFT_SIZE / 2];
        int16_t 		asnr = 30;
 static float32_t 	SNR_prio[NR_FFT_SIZE / 2];
 static float32_t 	SNR_post[NR_FFT_SIZE / 2];
-const float32_t 	tax = 0.071;	// noise output smoothing time constant - absolut value in seconds
-const float32_t 	tap = 0.152;	// speech prob smoothing time constant  - absolut value in seconds
-const float32_t 	psthr = 0.99;	// threshold for smoothed speech probability [0.99]
-const float32_t 	pnsaf = 0.01;	// noise probability safety value [0.01]
-const float32_t 	psini = 0.5;	// initial speech probability [0.5]
-const float32_t 	pspri = 0.5;	// prior speech probability [0.5]
-	   float32_t 	nr_alpha = 0.995;
+const  float32_t 	tax = 0.071;	// noise output smoothing time constant - absolut value in seconds
+const  float32_t 	tap = 0.152;	// speech prob smoothing time constant  - absolut value in seconds
+const  float32_t 	psthr = 0.99;	// threshold for smoothed speech probability [0.99]
+const  float32_t 	pnsaf = 0.01;	// noise probability safety value [0.01]
+const  float32_t 	pspri = 0.5;	// prior speech probability [0.5]
+       float32_t 	nr_alpha = 0.995;
 static float32_t 	Hk_old[NR_FFT_SIZE / 2];
        float32_t 	a_corr = 1.0;
        float32_t 	v = 1.0;
@@ -442,8 +440,8 @@ snr_prio_min = 0.001; 			//powf(10, - (float32_t)NR2.snr_prio_min_int / 10.0);  
 	 nr_alpha = (float32_t)(NR3.alpha_int)/1000.0 + 0.899f;
 	 asnr =	NR3.asnr_int;
 	 a_corr = (float32_t)NR3.a_corr / 10.0f;
-	 ax=expf(-a_corr * NR_FFT_SIZE / ovrlp/8000/tax);  //tax is a timeconstant of 71ms
-	 ap=expf(-a_corr * NR_FFT_SIZE / ovrlp/8000/tap);  //tap is a timeconstant of 152ms
+	 ax=expf(-a_corr * NR_FFT_SIZE /8000/tax);  //tax is a timeconstant of 71ms
+	 ap=expf(-a_corr * NR_FFT_SIZE /8000/tap);  //tap is a timeconstant of 152ms
 
 	 if (init_done < 1)
 	   {
@@ -464,12 +462,13 @@ snr_prio_min = 0.001; 			//powf(10, - (float32_t)NR2.snr_prio_min_int / 10.0);  
 
 		  if (pslp[bindx] > psthr)
 		  {
-			  ph1y[bindx] = 1.0 - pnsaf;
+			//  ph1y[bindx] = 1.0 - pnsaf;
+		      ph1y[bindx] = fmin(ph1y[bindx],(1.0-pnsaf));
 		  }
-		  else
-		  {
-			  ph1y[bindx] = fmin(ph1y[bindx] , 1.0);
-		  }
+		 // else
+		  //{
+		//	  ph1y[bindx] = fmin(ph1y[bindx] , 1.0);
+		 // }
 		  xtr = (1.0 - ph1y[bindx]) * X[bindx] + ph1y[bindx] * xt[bindx];
 		  xt[bindx] = ax * xt[bindx] + (1.0 - ax) * xtr;
         }
@@ -477,11 +476,12 @@ snr_prio_min = 0.001; 			//powf(10, - (float32_t)NR2.snr_prio_min_int / 10.0);  
 
       for(int bindx = 0; bindx < NR_FFT_SIZE / 2; bindx++)// 1. Step of NR - calculate the SNR's
        {
-		 SNR_post[bindx] = fmax(fmin(X[bindx] / xt[bindx],1000.0), snr_prio_min); // limited to +30 /-15 dB, might be still too much of reduction, let's try it?
+		//                           lambda_y  lambda_d  +30dB     -30dB
+		SNR_post[bindx] = fmax(fmin(X[bindx] / xt[bindx],1000.0), snr_prio_min); // limited to +30 /-15 dB, might be still too much of reduction, let's try it?
 
 		 if(NR3.det_access < 5)  //switch between old (<5) and Warren's >=5
 		   SNR_prio[bindx] = fmax(nr_alpha * Hk_old[bindx] + (1.0f - nr_alpha) * fmax(SNR_post[bindx] - 1.0f, 0.0f), 0.0f);
-		 else
+		 else   //                       prev_mask
 		   SNR_prio[bindx] = nr_alpha * Hk_old[bindx] + (1.0f - nr_alpha) * fmax(SNR_post[bindx] - 1.0f, 1.0e-30f); // bei Warren
   	  // 4    calculate v = SNRprio(n, bin[i]) / (SNRprio(n, bin[i]) + 1) * SNRpost(n, bin[i]) (eq. 12 of Schmitt et al. 2002, eq. 9 of Romanin et al. 2009)
 	  //		   and calculate the HK's
