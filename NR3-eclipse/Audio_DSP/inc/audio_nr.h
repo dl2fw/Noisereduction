@@ -20,6 +20,8 @@ typedef struct {
   int32_t ka2;
   int32_t det_access;
   int32_t a_corr;
+  int32_t apc;
+  int32_t axc;
 } NoiseredPara;
 
 NoiseredPara NR3;

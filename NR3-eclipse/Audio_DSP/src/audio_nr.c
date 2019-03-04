@@ -392,8 +392,8 @@ void gain_calc(float32_t* X, float32_t* Hk)
 
 {
 static int16_t 		init_done = 0;
-static float32_t 	pslp[NR_FFT_SIZE / 2];
-static float32_t 	xt[NR_FFT_SIZE / 2];
+static float32_t 	pbar[NR_FFT_SIZE / 2];
+static float32_t 	sigma2N[NR_FFT_SIZE / 2];
        float32_t 	xtr;
        float32_t 	ph1y[NR_FFT_SIZE / 2];
        float32_t	ax;
@@ -403,8 +403,8 @@ static float32_t 	xt[NR_FFT_SIZE / 2];
        float32_t	pfac;
        float32_t	snr_prio_min;
        int16_t 		asnr = 30;
-static float32_t 	SNR_prio[NR_FFT_SIZE / 2];
-static float32_t 	SNR_post[NR_FFT_SIZE / 2];
+//static float32_t 	SNR_prio[NR_FFT_SIZE / 2];
+//static float32_t 	SNR_post[NR_FFT_SIZE / 2];
 const  float32_t 	tax = 0.071;	// noise output smoothing time constant - absolut value in seconds
 const  float32_t 	tap = 0.152;	// speech prob smoothing time constant  - absolut value in seconds
 const  float32_t 	psthr = 0.99;	// threshold for smoothed speech probability [0.99]
@@ -414,6 +414,9 @@ const  float32_t 	pspri = 0.5;	// prior speech probability [0.5]
 static float32_t 	Hk_old[NR_FFT_SIZE / 2];
        float32_t 	a_corr = 1.0;
        float32_t 	v = 1.0;
+       float32_t	gamma, eps_hat, ehr;
+static float32_t	prev_gamma[NR_FFT_SIZE /2];
+
 // for 12ksps and FFT1282
 //NR2.ax = 0.9276; 		//expf(-tinc / tax);
 //NR2.ap = 0.9655; 		//expf(-tinc / tap);
@@ -425,8 +428,8 @@ static float32_t 	Hk_old[NR_FFT_SIZE / 2];
 //ap = 0.81020;
 //for 8ksps and FFT512 same as above (same frame rate!!)
 // for 8ksps and FFT1024
-ax = 0.406;
-ap = 0.6564;
+ax = 0.68;
+ap = 0.84;
 
 asnr =	NR3.asnr_int;
 xih1 = powf(10, (float32_t)asnr / 10.0);
@@ -443,39 +446,40 @@ snr_prio_min = 0.001; 			//powf(10, - (float32_t)NR2.snr_prio_min_int / 10.0);  
 	 ax=expf(-a_corr * NR_FFT_SIZE /8000/tax);  //tax is a timeconstant of 71ms
 	 ap=expf(-a_corr * NR_FFT_SIZE /8000/tap);  //tap is a timeconstant of 152ms
 
+	 ax=(float32_t)NR3.axc / 100.0;
+	 ap=(float32_t)NR3.apc / 100.0;
+
 	 if (init_done < 1)
 	   {
 	     for (int bindx = 0; bindx < NR_FFT_SIZE / 2; bindx++)
 	       {
 		 Hk_old[bindx] = 1.0; // old gain or xu in development mode
-		 pslp[bindx] = 0.5;
-		 xt[bindx] = 0.5;
+		 pbar[bindx] = 0.5;
+		 sigma2N[bindx] = 0.5;
 		 init_done = 1;
+		 prev_gamma[bindx] = 1.0;
 	       }
 	   }
 
 
 	for(int bindx = 0; bindx < NR_FFT_SIZE / 2; bindx++)// 1. Step of NR - calculate the SNR's
     	{
-		  ph1y[bindx] = 1.0 / (1.0 + pfac * expf(xih1r * X[bindx]/xt[bindx]));
-		  pslp[bindx] = ap * pslp[bindx] + (1.0 - ap) * ph1y[bindx];
+		  ph1y[bindx] = 1.0 / (1.0 + pfac * expf(xih1r * X[bindx]/sigma2N[bindx]));
+		  pbar[bindx] = ap * pbar[bindx] + (1.0 - ap) * ph1y[bindx];
 
-		  if (pslp[bindx] > psthr)
+		  if (pbar[bindx] > psthr)
 		  {
-			//  ph1y[bindx] = 1.0 - pnsaf;
 		      ph1y[bindx] = fmin(ph1y[bindx],(1.0-pnsaf));
 		  }
-		 // else
-		  //{
-		//	  ph1y[bindx] = fmin(ph1y[bindx] , 1.0);
-		 // }
-		  xtr = (1.0 - ph1y[bindx]) * X[bindx] + ph1y[bindx] * xt[bindx];
-		  xt[bindx] = ax * xt[bindx] + (1.0 - ax) * xtr;
+
+		  xtr = (1.0 - ph1y[bindx]) * X[bindx] + ph1y[bindx] * sigma2N[bindx];
+		  sigma2N[bindx] = ax * sigma2N[bindx] + (1.0 - ax) * xtr;
         }
 
 
       for(int bindx = 0; bindx < NR_FFT_SIZE / 2; bindx++)// 1. Step of NR - calculate the SNR's
        {
+	  /*
 		//                           lambda_y  lambda_d  +30dB     -30dB
 		SNR_post[bindx] = fmax(fmin(X[bindx] / xt[bindx],1000.0), snr_prio_min); // limited to +30 /-15 dB, might be still too much of reduction, let's try it?
 
@@ -497,6 +501,21 @@ snr_prio_min = 0.001; 			//powf(10, - (float32_t)NR2.snr_prio_min_int / 10.0);  
 			Hk[bindx] = fmin(fmax(SNR_prio[bindx] / (1 + SNR_prio[bindx]) * expf(fmin(70.0,0.5 * e1xb(v))),0.0001),10000); // calculate the  Exponential Integral most accurate
 		  }
 		Hk_old[bindx] = SNR_post[bindx] * Hk[bindx] * Hk[bindx]; //
+
+      */
+	  gamma = fmin(X[bindx] / sigma2N[bindx], 1000);
+	  eps_hat = nr_alpha * Hk_old[bindx] * Hk_old[bindx] * prev_gamma[bindx]
+		  + (1.0 - nr_alpha) * fmax(gamma - 1.0, 1.0e-30f);
+	  ehr = eps_hat / (1.0 + eps_hat);
+	  v = ehr * gamma;
+	  if((Hk[bindx] = ehr * expf(fmin(70.0, 0.5 * e1xb(v)))) > 10000) Hk[bindx] = 10000;
+	  if (Hk[bindx] != Hk[bindx]) Hk[bindx] = 0.01;
+	  prev_gamma[bindx] = gamma;
+	  Hk_old[bindx] = Hk[bindx];
+
+
+
+
 
        }
 

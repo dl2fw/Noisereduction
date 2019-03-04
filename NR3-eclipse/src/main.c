@@ -50,8 +50,8 @@ int main(void) {
       TM_HD44780_Puts(0, 1,"reading default");
 
       NR3.power_threshold_int = 75;
-      NR3.alpha_int = 90;
-      NR3.asnr_int = 15;
+      NR3.alpha_int = 83;
+      NR3.asnr_int = 20;
       NR3.width_int = 12;
       NR3.NR_enabled = 1;
       NR3.NB_enabled = 0;
@@ -59,6 +59,8 @@ int main(void) {
       NR3.ka2 = 20;
       NR3.det_access = 7;
       NR3.a_corr = 10;
+      NR3.apc=84;
+      NR3.axc=68;
     }
   else
     TM_HD44780_Puts(0, 1,"use EEPROM data");
@@ -126,6 +128,8 @@ int main(void) {
                     for (int i=0; i<n_samples_16K; i++) {
                         if (abs(adc16k[OS_TAPS_16K + i]) > 28000)
                             led_err(1);
+                        if (adc16k[OS_TAPS_16K + i] > 32760) adc16k[OS_TAPS_16K + i] = 32760;
+                        if (adc16k[OS_TAPS_16K + i] < -32760) adc16k[OS_TAPS_16K + i] = -32760;
                     }
 
                     fdmdv_16_to_8_short(adc8k,&adc16k[OS_TAPS_16K],n_samples_8K);//convert to internal 8ksamples / sec

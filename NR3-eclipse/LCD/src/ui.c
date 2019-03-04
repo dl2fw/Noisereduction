@@ -4,7 +4,7 @@
 #include "tm_stm32f4_exti.h"
 #include "stdio.h"
 
-#define NR_development  //enable extended menu structure for developments
+//#define NR_development  //enable extended menu structure for developments
 
 static int16_t menu_pos = 6; // keeps the actual menu position
 
@@ -215,7 +215,7 @@ void menu_handling()
 	  menu_pos++;
 
 #ifdef NR_development
-	  if (menu_pos > 11) menu_pos = 11;
+	  if (menu_pos > 13) menu_pos = 13;
 #else
 	  if (menu_pos > 6) menu_pos = 6;
 #endif
@@ -440,6 +440,42 @@ void menu_handling()
                          	was_in = 11;
                          	changed_item=0;
                          	break;
+
+    case 12:  // check for Problems
+
+                           changed_item = modify_menu_item(&NR3.apc,99,1);
+
+
+                         	if ((trigger_select == 1) || changed_item || was_in != 9)
+                         	  {
+    			   sprintf(buf, "                ");
+    			   TM_HD44780_Puts(0, 0,buf);
+    			   TM_HD44780_Puts(0, 1,buf);
+    			   sprintf(buf, "ap_corr   : %3d", (int)(NR3.apc));
+    			   TM_HD44780_Puts(0, 1,buf);
+                         	  }
+                         	was_in = 12;
+                         	changed_item=0;
+                         	break;
+    case 13:  // check for Problems
+
+                           changed_item = modify_menu_item(&NR3.axc,99,1);
+
+
+                         	if ((trigger_select == 1) || changed_item || was_in != 9)
+                         	  {
+    			   sprintf(buf, "                ");
+    			   TM_HD44780_Puts(0, 0,buf);
+    			   TM_HD44780_Puts(0, 1,buf);
+    			   sprintf(buf, "ax_corr   : %3d", (int)(NR3.axc));
+    			   TM_HD44780_Puts(0, 1,buf);
+                         	  }
+                         	was_in = 13;
+                         	changed_item=0;
+                         	break;
+
+
+
 #endif
 
   }
